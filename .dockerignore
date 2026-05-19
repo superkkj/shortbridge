@@ -1,0 +1,16 @@
+build/
+.gradle/
+.git/
+.idea/
+.vscode/
+.DS_Store
+storage-local/
+*.local.yml
+*.local.properties
+src/main/resources/application-local.yml
+src/main/resources/secrets/
+docs/integrations/
+docs/RETROSPECTIVE-002-tiktok-integration.md
+*.iml
+out/
+HELP.md

@@ -37,6 +37,10 @@ out/
 src/main/resources/application-local.yml
 src/main/resources/secrets/
 
+### 시크릿/개인정보 포함 작업 문서 (로컬 전용) ###
+docs/integrations/
+docs/RETROSPECTIVE-002-tiktok-integration.md
+
 ### Storage / data ###
 data/
 uploads/
