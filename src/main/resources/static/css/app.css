@@ -1,0 +1,3 @@
+.text-pink { color: #e1306c; }
+.badge { font-weight: 500; }
+.table > :not(caption) > * > * { vertical-align: middle; }

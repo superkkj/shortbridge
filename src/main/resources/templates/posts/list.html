@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(title='게시물 · ShortBridge', content=~{::section})}">
+<body>
+<section>
+  <div class="d-flex justify-content-between mb-3">
+    <h1 class="h4 mb-0">게시물</h1>
+    <a th:href="@{/posts/new}" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-lg"></i> 새 게시물
+    </a>
+  </div>
+
+  <div th:if="${#lists.isEmpty(posts)}" class="alert alert-light text-center">
+    아직 작성된 게시물이 없습니다.
+  </div>
+  <table th:unless="${#lists.isEmpty(posts)}" class="table align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>제목</th><th>모드</th><th>예약</th><th>상태</th><th>플랫폼</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr th:each="post : ${posts}">
+        <td><a th:href="@{|/posts/${post.id}|}" th:text="${post.title}">제목</a></td>
+        <td><span class="badge bg-secondary" th:text="${post.publishMode}">NOW</span></td>
+        <td class="text-muted small" th:text="${post.scheduledAt}">-</td>
+        <td>
+          <span class="badge"
+                th:classappend="${post.status.name() == 'PUBLISHED'} ? 'bg-success' :
+                                (${post.status.name() == 'FAILED'} ? 'bg-danger' :
+                                (${post.status.name() == 'PARTIAL_FAILED'} ? 'bg-warning text-dark' : 'bg-info'))"
+                th:text="${post.status}">QUEUED</span>
+        </td>
+        <td>
+          <span th:each="t : ${post.targets}" class="badge me-1"
+                th:classappend="${t.status.name() == 'PUBLISHED'} ? 'bg-success' :
+                                (${t.status.name() == 'FAILED_PERMANENT'} ? 'bg-danger' :
+                                (${t.status.name() == 'FAILED_TEMPORARY'} ? 'bg-warning text-dark' : 'bg-secondary'))"
+                th:text="${t.platform}">YOUTUBE</span>
+        </td>
+        <td>
+          <a th:href="@{|/posts/${post.id}|}" class="btn btn-sm btn-outline-secondary">상세</a>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+</body>
+</html>

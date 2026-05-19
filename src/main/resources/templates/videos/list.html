@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(title='영상 · ShortBridge', content=~{::section})}">
+<body>
+<section>
+  <div class="d-flex justify-content-between mb-3">
+    <h1 class="h4 mb-0">영상</h1>
+    <a th:href="@{/videos/new}" class="btn btn-primary btn-sm">
+      <i class="bi bi-cloud-upload"></i> 새 영상 업로드
+    </a>
+  </div>
+
+  <div th:if="${#lists.isEmpty(videos)}" class="alert alert-light text-center">
+    아직 업로드된 영상이 없습니다.
+  </div>
+  <table th:unless="${#lists.isEmpty(videos)}" class="table align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>파일</th><th>길이(초)</th><th>해상도</th><th>코덱</th><th>상태</th><th>업로드</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr th:each="v : ${videos}">
+        <td th:text="${v.originalFileName}">video.mp4</td>
+        <td th:text="${v.durationSeconds}">0</td>
+        <td>
+          <span th:if="${v.width != null and v.height != null}"
+                th:text="${v.width + 'x' + v.height}">1080x1920</span>
+        </td>
+        <td th:text="${v.videoCodec}">h264</td>
+        <td><span class="badge bg-info" th:text="${v.status}">READY</span></td>
+        <td class="text-muted small" th:text="${#temporals.format(v.createdAt, 'yyyy-MM-dd HH:mm', 'UTC')}">-</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+</body>
+</html>

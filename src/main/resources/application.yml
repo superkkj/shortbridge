@@ -1,0 +1,78 @@
+spring:
+  application:
+    name: shortbridge
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: UTC
+  servlet:
+    multipart:
+      max-file-size: 600MB
+      max-request-size: 600MB
+  thymeleaf:
+    cache: false
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+server:
+  port: ${SERVER_PORT:8080}
+  forward-headers-strategy: framework
+  error:
+    include-message: always
+
+shortbridge:
+  storage:
+    type: ${STORAGE_TYPE:local}
+    local:
+      base-dir: ${STORAGE_LOCAL_BASE:./storage-local}
+      public-base-url: ${STORAGE_LOCAL_PUBLIC_URL:http://localhost:8080/files}
+    s3:
+      endpoint: ${S3_ENDPOINT:http://localhost:9000}
+      region: ${S3_REGION:us-east-1}
+      bucket: ${S3_BUCKET:shortbridge}
+      access-key: ${S3_ACCESS_KEY:minioadmin}
+      secret-key: ${S3_SECRET_KEY:minioadmin}
+      path-style-access: ${S3_PATH_STYLE:true}
+      presigned-url-ttl-seconds: 3600
+  security:
+    token-cipher:
+      keys:
+        v1: ${TOKEN_KEY_V1:change-me-32bytes-development-only-key-1}
+      active-key-version: v1
+  video:
+    max-duration-seconds: 140
+    max-file-size-bytes: 536870912
+    allowed-mime-types: video/mp4
+    allowed-video-codecs: h264
+    allowed-audio-codecs: aac
+  ffmpeg:
+    ffprobe-path: ${FFPROBE_PATH:ffprobe}
+  publish:
+    scheduler:
+      fixed-delay-ms: 5000
+      batch-size: 50
+    feature-flags:
+      youtube-enabled: true
+      instagram-enabled: true
+      tiktok-enabled: true
+  oauth:
+    success-redirect-url: /dashboard
+
+logging:
+  level:
+    root: INFO
+    com.shortbridge: DEBUG
+    org.springframework.security: INFO
+    org.springframework.web: INFO
+    org.hibernate.SQL: INFO

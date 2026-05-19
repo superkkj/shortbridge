@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(title='게시물 상세 · ShortBridge', content=~{::section})}">
+<body>
+<section>
+  <a th:href="@{/posts}" class="text-muted small">← 목록</a>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0" th:text="${post.title}">제목</h1>
+    <span class="badge bg-info" th:text="${post.status}">QUEUED</span>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <dl class="row mb-0">
+        <dt class="col-sm-3">설명</dt><dd class="col-sm-9" th:text="${post.description}">-</dd>
+        <dt class="col-sm-3">발행 모드</dt><dd class="col-sm-9" th:text="${post.publishMode}">-</dd>
+        <dt class="col-sm-3">예약 시각</dt><dd class="col-sm-9" th:text="${post.scheduledAt}">-</dd>
+        <dt class="col-sm-3">해시태그</dt><dd class="col-sm-9" th:text="${#strings.listJoin(post.hashtags, ', ')}">-</dd>
+      </dl>
+    </div>
+  </div>
+
+  <h2 class="h5">플랫폼별 발행 상태</h2>
+  <table class="table align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>플랫폼</th><th>상태</th><th>외부 ID</th><th>에러</th><th>재시도</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr th:each="t : ${post.targets}">
+        <td><span class="badge bg-secondary" th:text="${t.platform}">YOUTUBE</span></td>
+        <td>
+          <span class="badge"
+                th:classappend="${t.status.name() == 'PUBLISHED'} ? 'bg-success' :
+                                (${t.status.name() == 'FAILED_PERMANENT'} ? 'bg-danger' :
+                                (${t.status.name() == 'FAILED_TEMPORARY'} ? 'bg-warning text-dark' :
+                                (${t.status.name() == 'BLOCKED_BY_CAPABILITY'} ? 'bg-danger' : 'bg-info')))"
+                th:text="${t.status}">QUEUED</span>
+        </td>
+        <td class="text-muted small" th:text="${t.externalPostId}">-</td>
+        <td class="text-danger small" th:text="${t.errorMessage}">-</td>
+        <td class="small" th:text="${t.retryCount}">0</td>
+        <td>
+          <button type="button" class="btn btn-sm btn-outline-primary js-retry"
+                  th:if="${t.status.name() == 'FAILED_TEMPORARY' or t.status.name() == 'RETRY_WAIT' or t.status.name() == 'RECONNECT_REQUIRED'}"
+                  th:data-id="${t.id}">
+            <i class="bi bi-arrow-clockwise"></i> 재시도
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <script>
+    (function () {
+      const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+      const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+      document.querySelectorAll('.js-retry').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.id;
+          const headers = {};
+          if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
+          const res = await fetch('/api/v1/posts/targets/' + id + '/retry', { method: 'POST', headers });
+          if (res.ok) location.reload();
+          else alert((await res.json()).message || '실패');
+        });
+      });
+    })();
+  </script>
+</section>
+</body>
+</html>

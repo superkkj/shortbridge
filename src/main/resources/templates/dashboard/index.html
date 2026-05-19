@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(title='대시보드 · ShortBridge', content=~{::section})}">
+<body>
+<section>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">대시보드</h1>
+    <div class="text-muted small">
+      <span th:text="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd HH:mm')}">2026-05-18 12:00</span>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-body">
+          <div class="text-muted small">총 영상</div>
+          <div class="h3 mb-0" th:text="${#lists.size(videos)}">0</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-body">
+          <div class="text-muted small">총 게시물</div>
+          <div class="h3 mb-0" th:text="${#lists.size(posts)}">0</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-body">
+          <div class="text-muted small">연결된 플랫폼</div>
+          <div class="h3 mb-0" th:text="${#lists.size(socialAccounts)}">0</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-primary">
+        <div class="card-body">
+          <div class="text-muted small">새 게시물 발행</div>
+          <a th:href="@{/posts/new}" class="btn btn-primary btn-sm mt-2">
+            <i class="bi bi-cloud-upload"></i> 시작
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header d-flex justify-content-between">
+      <strong>최근 게시물</strong>
+      <a th:href="@{/posts}" class="small">모두 보기 →</a>
+    </div>
+    <div class="card-body p-0">
+      <div th:if="${#lists.isEmpty(posts)}" class="p-4 text-center text-muted">
+        아직 게시물이 없습니다.
+      </div>
+      <table th:unless="${#lists.isEmpty(posts)}" class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>제목</th><th>모드</th><th>상태</th><th>플랫폼 상태</th><th>생성</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="post : ${posts}">
+            <td>
+              <a th:href="@{|/posts/${post.id}|}" th:text="${post.title}">제목</a>
+            </td>
+            <td><span class="badge bg-secondary" th:text="${post.publishMode}">NOW</span></td>
+            <td><span class="badge bg-info" th:text="${post.status}">DRAFT</span></td>
+            <td>
+              <span th:each="t : ${post.targets}" class="badge me-1"
+                    th:classappend="${t.status.name() == 'PUBLISHED'} ? 'bg-success' :
+                                    (${t.status.name() == 'FAILED_PERMANENT'} ? 'bg-danger' :
+                                    (${t.status.name() == 'FAILED_TEMPORARY'} ? 'bg-warning text-dark' : 'bg-secondary'))"
+                    th:text="${t.platform + ' · ' + t.status}">YOUTUBE · QUEUED</span>
+            </td>
+            <td class="text-muted small" th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm', 'UTC')}">-</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+</body>
+</html>
