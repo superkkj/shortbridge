@@ -46,7 +46,7 @@ public class SocialAccountConnectController {
     String state = newState();
     session.setAttribute(STATE_ATTR_PREFIX + platformKey, state);
 
-    String redirectUri = properties.redirectUri(platformKey);
+    String redirectUri = properties.redirectUri(platform);
     String authUrl =
         connector.authorizationUrl(new AuthorizationContext(currentUser.userId(), state, redirectUri));
     log.info("connect start: platform={} userId={} redirect={}", platform, currentUser.userId(), redirectUri);
@@ -81,7 +81,7 @@ public class SocialAccountConnectController {
 
     Platform platform = resolvePlatform(platformKey);
     SocialConnector connector = registry.get(platform);
-    String redirectUri = properties.redirectUri(platformKey);
+    String redirectUri = properties.redirectUri(platform);
 
     ConnectionResult result =
         connector.handleCallback(new CallbackContext(currentUser.userId(), code, state, redirectUri));
