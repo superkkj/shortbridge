@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shortbridge.common.exception.ErrorCode;
 import com.shortbridge.common.exception.ShortBridgeException;
+import com.shortbridge.common.logging.SensitiveLog;
 import com.shortbridge.connect.connector.AuthorizationContext;
 import com.shortbridge.connect.connector.CallbackContext;
 import com.shortbridge.connect.connector.ConnectionResult;
@@ -97,7 +98,10 @@ public class TikTokConnector implements SocialConnector {
     try {
       HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
       if (response.statusCode() / 100 != 2) {
-        log.warn("tiktok token exchange failed: status={} body={}", response.statusCode(), response.body());
+        log.warn(
+            "tiktok token exchange failed: status={} body={}",
+            response.statusCode(),
+            SensitiveLog.maskTokens(response.body()));
         throw ShortBridgeException.of(
             ErrorCode.EXTERNAL_PLATFORM_ERROR, "TikTok token exchange: " + response.statusCode());
       }
@@ -119,7 +123,10 @@ public class TikTokConnector implements SocialConnector {
     try {
       HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
       if (response.statusCode() / 100 != 2) {
-        log.warn("tiktok user info failed: status={} body={}", response.statusCode(), response.body());
+        log.warn(
+            "tiktok user info failed: status={} body={}",
+            response.statusCode(),
+            SensitiveLog.truncate(response.body()));
         return null;
       }
       JsonNode root = mapper.readTree(response.body());

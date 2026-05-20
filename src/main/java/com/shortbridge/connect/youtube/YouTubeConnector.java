@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shortbridge.common.exception.ErrorCode;
 import com.shortbridge.common.exception.ShortBridgeException;
+import com.shortbridge.common.logging.SensitiveLog;
 import com.shortbridge.connect.connector.AuthorizationContext;
 import com.shortbridge.connect.connector.CallbackContext;
 import com.shortbridge.connect.connector.ConnectionResult;
@@ -106,7 +107,10 @@ public class YouTubeConnector implements SocialConnector {
     try {
       HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
       if (response.statusCode() / 100 != 2) {
-        log.warn("youtube token exchange failed: status={} body={}", response.statusCode(), response.body());
+        log.warn(
+            "youtube token exchange failed: status={} body={}",
+            response.statusCode(),
+            SensitiveLog.maskTokens(response.body()));
         throw ShortBridgeException.of(ErrorCode.EXTERNAL_PLATFORM_ERROR, "YouTube token exchange: " + response.statusCode());
       }
       JsonNode json = mapper.readTree(response.body());
@@ -127,7 +131,10 @@ public class YouTubeConnector implements SocialConnector {
     try {
       HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
       if (response.statusCode() / 100 != 2) {
-        log.warn("youtube channels fetch failed: status={} body={}", response.statusCode(), response.body());
+        log.warn(
+            "youtube channels fetch failed: status={} body={}",
+            response.statusCode(),
+            SensitiveLog.truncate(response.body()));
         return null;
       }
       JsonNode root = mapper.readTree(response.body());
