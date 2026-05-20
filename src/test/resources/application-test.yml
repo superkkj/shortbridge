@@ -1,0 +1,68 @@
+spring:
+  datasource:
+    hikari:
+      data-source-properties:
+        stringtype: unspecified
+  rabbitmq:
+    listener:
+      simple:
+        auto-startup: false
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: test-google-client-id
+            client-secret: test-google-client-secret
+            scope:
+              - openid
+              - email
+              - profile
+            redirect-uri: "http://localhost:8080/login/oauth2/code/{registrationId}"
+
+shortbridge:
+  connect:
+    base-url: http://localhost:8080
+    youtube:
+      client-id: test-yt-id
+      client-secret: test-yt-secret
+    tiktok:
+      client-id: test-tt-id
+      client-secret: test-tt-secret
+      redirect-uri: http://localhost:8080/connect/tiktok/callback
+    instagram:
+      client-id: test-ig-id
+      client-secret: test-ig-secret
+  storage:
+    type: local
+    local:
+      base-dir: ${java.io.tmpdir}/shortbridge-test
+      public-base-url: http://localhost:8080/files
+  security:
+    token-cipher:
+      keys:
+        v1: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      active-key-version: v1
+  publish:
+    scheduler:
+      fixed-delay-ms: 60000
+      batch-size: 20
+    feature-flags:
+      youtube-enabled: true
+      instagram-enabled: true
+      tiktok-enabled: true
+
+logging:
+  level:
+    root: WARN
+    com.shortbridge: INFO
