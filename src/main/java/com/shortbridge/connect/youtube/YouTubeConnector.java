@@ -1,5 +1,6 @@
 package com.shortbridge.connect.youtube;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shortbridge.common.exception.ErrorCode;
@@ -109,8 +110,7 @@ public class YouTubeConnector implements SocialConnector {
         throw ShortBridgeException.of(ErrorCode.EXTERNAL_PLATFORM_ERROR, "YouTube token exchange: " + response.statusCode());
       }
       JsonNode json = mapper.readTree(response.body());
-      Map<String, Object> map = mapper.convertValue(json, Map.class);
-      return map;
+      return mapper.convertValue(json, new TypeReference<Map<String, Object>>() {});
     } catch (IOException | InterruptedException e) {
       Thread.currentThread().interrupt();
       throw ShortBridgeException.of(ErrorCode.EXTERNAL_PLATFORM_ERROR, e, "YouTube token exchange IO");
