@@ -6,7 +6,7 @@ RUN gradle bootJar --no-daemon -x test
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-RUN apk add --no-cache wget
+RUN apk add --no-cache wget ffmpeg
 COPY --from=builder /app/build/libs/*.jar app.jar
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
