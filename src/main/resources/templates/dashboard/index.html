@@ -3,69 +3,120 @@
       th:replace="~{layout/base :: layout(title='대시보드 · ShortBridge', content=~{::section})}">
 <body>
 <section>
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h4 mb-0">대시보드</h1>
+  <div class="sb-page-head">
+    <div>
+      <h1>대시보드</h1>
+      <div class="sb-subtitle">한 눈에 보는 ShortBridge 활동</div>
+    </div>
     <div class="text-muted small">
-      <span th:text="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd HH:mm')}">2026-05-18 12:00</span>
+      <i class="bi bi-clock"></i>
+      <span th:text="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd HH:mm')}">2026-05-20 12:00</span>
     </div>
   </div>
 
+  <!-- Onboarding Hero: 게시물 없을 때만 노출 -->
+  <div th:if="${#lists.isEmpty(posts)}" class="sb-hero">
+    <h2><i class="bi bi-stars"></i> ShortBridge에 오신 것을 환영합니다</h2>
+    <p>영상 1개를 업로드하면 YouTube · Instagram · TikTok 에 동시 발행할 수 있습니다.</p>
+    <a th:href="@{/posts/new}" class="btn btn-light">
+      <i class="bi bi-rocket-takeoff"></i> 첫 게시물 만들기
+    </a>
+  </div>
+
+  <!-- 3-step Onboarding: 아직 셋업이 완료되지 않은 경우 -->
+  <div th:if="${#lists.isEmpty(posts)}" class="sb-steps">
+    <div class="sb-step" th:classappend="${not #lists.isEmpty(socialAccounts)} ? 'done'">
+      <div class="sb-step-num">
+        <i th:if="${not #lists.isEmpty(socialAccounts)}" class="bi bi-check-lg"></i>
+        <span th:unless="${not #lists.isEmpty(socialAccounts)}">1</span>
+      </div>
+      <div class="sb-step-title">플랫폼 계정 연결</div>
+      <div class="sb-step-desc">YouTube · TikTok · Instagram 계정을 ShortBridge 에 연결합니다.</div>
+      <a th:href="@{/social-accounts}" class="sb-step-cta">
+        <span th:if="${#lists.isEmpty(socialAccounts)}">지금 연결 <i class="bi bi-arrow-right"></i></span>
+        <span th:unless="${#lists.isEmpty(socialAccounts)}">완료됨</span>
+      </a>
+    </div>
+    <div class="sb-step" th:classappend="${not #lists.isEmpty(videos)} ? 'done'">
+      <div class="sb-step-num">
+        <i th:if="${not #lists.isEmpty(videos)}" class="bi bi-check-lg"></i>
+        <span th:unless="${not #lists.isEmpty(videos)}">2</span>
+      </div>
+      <div class="sb-step-title">영상 업로드</div>
+      <div class="sb-step-desc">9:16 세로 영상 파일을 ShortBridge 에 올립니다.</div>
+      <a th:href="@{/videos/new}" class="sb-step-cta">
+        <span th:if="${#lists.isEmpty(videos)}">영상 올리기 <i class="bi bi-arrow-right"></i></span>
+        <span th:unless="${#lists.isEmpty(videos)}">완료됨</span>
+      </a>
+    </div>
+    <div class="sb-step">
+      <div class="sb-step-num">3</div>
+      <div class="sb-step-title">게시물 발행</div>
+      <div class="sb-step-desc">제목 · 해시태그를 입력하고 발행 대상 플랫폼을 선택합니다.</div>
+      <a th:href="@{/posts/new}" class="sb-step-cta">
+        만들기 <i class="bi bi-arrow-right"></i>
+      </a>
+    </div>
+  </div>
+
+  <!-- 통계 카드 -->
   <div class="row g-3 mb-4">
-    <div class="col-md-3">
-      <div class="card">
-        <div class="card-body">
-          <div class="text-muted small">총 영상</div>
-          <div class="h3 mb-0" th:text="${#lists.size(videos)}">0</div>
-        </div>
+    <div class="col-md-3 col-6">
+      <div class="card sb-stat sb-hover">
+        <div class="sb-stat-icon bg-video"><i class="bi bi-film"></i></div>
+        <div class="sb-stat-label">총 영상</div>
+        <div class="sb-stat-value" th:text="${#lists.size(videos)}">0</div>
       </div>
     </div>
-    <div class="col-md-3">
-      <div class="card">
-        <div class="card-body">
-          <div class="text-muted small">총 게시물</div>
-          <div class="h3 mb-0" th:text="${#lists.size(posts)}">0</div>
-        </div>
+    <div class="col-md-3 col-6">
+      <div class="card sb-stat sb-hover">
+        <div class="sb-stat-icon bg-post"><i class="bi bi-send"></i></div>
+        <div class="sb-stat-label">총 게시물</div>
+        <div class="sb-stat-value" th:text="${#lists.size(posts)}">0</div>
       </div>
     </div>
-    <div class="col-md-3">
-      <div class="card">
-        <div class="card-body">
-          <div class="text-muted small">연결된 플랫폼</div>
-          <div class="h3 mb-0" th:text="${#lists.size(socialAccounts)}">0</div>
-        </div>
+    <div class="col-md-3 col-6">
+      <div class="card sb-stat sb-hover">
+        <div class="sb-stat-icon bg-link"><i class="bi bi-link-45deg"></i></div>
+        <div class="sb-stat-label">연결된 플랫폼</div>
+        <div class="sb-stat-value" th:text="${#lists.size(socialAccounts)}">0</div>
       </div>
     </div>
-    <div class="col-md-3">
-      <div class="card border-primary">
-        <div class="card-body">
-          <div class="text-muted small">새 게시물 발행</div>
-          <a th:href="@{/posts/new}" class="btn btn-primary btn-sm mt-2">
-            <i class="bi bi-cloud-upload"></i> 시작
-          </a>
+    <div class="col-md-3 col-6">
+      <a th:href="@{/posts/new}" class="text-decoration-none">
+        <div class="card sb-stat sb-hover" style="cursor: pointer;">
+          <div class="sb-stat-icon bg-cta"><i class="bi bi-cloud-upload"></i></div>
+          <div class="sb-stat-label">새 게시물 발행</div>
+          <div class="sb-stat-value" style="font-size:1rem; color: var(--sb-primary);">시작하기 <i class="bi bi-arrow-right"></i></div>
         </div>
-      </div>
+      </a>
     </div>
   </div>
 
+  <!-- 최근 게시물 -->
   <div class="card">
-    <div class="card-header d-flex justify-content-between">
-      <strong>최근 게시물</strong>
-      <a th:href="@{/posts}" class="small">모두 보기 →</a>
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span><i class="bi bi-clock-history"></i> 최근 게시물</span>
+      <a th:href="@{/posts}" class="small text-decoration-none">모두 보기 <i class="bi bi-arrow-right"></i></a>
     </div>
     <div class="card-body p-0">
-      <div th:if="${#lists.isEmpty(posts)}" class="p-4 text-center text-muted">
-        아직 게시물이 없습니다.
+      <div th:if="${#lists.isEmpty(posts)}" class="sb-empty">
+        <i class="bi bi-inbox"></i>
+        <div>아직 게시물이 없습니다</div>
+        <a th:href="@{/posts/new}" class="btn btn-primary mt-3">
+          <i class="bi bi-plus-lg"></i> 첫 게시물 만들기
+        </a>
       </div>
-      <table th:unless="${#lists.isEmpty(posts)}" class="table table-hover align-middle mb-0">
-        <thead class="table-light">
+      <table th:unless="${#lists.isEmpty(posts)}" class="table table-hover mb-0">
+        <thead>
           <tr>
-            <th>제목</th><th>모드</th><th>상태</th><th>플랫폼 상태</th><th>생성</th>
+            <th>제목</th><th>모드</th><th>상태</th><th>플랫폼</th><th>생성</th>
           </tr>
         </thead>
         <tbody>
           <tr th:each="post : ${posts}">
             <td>
-              <a th:href="@{|/posts/${post.id}|}" th:text="${post.title}">제목</a>
+              <a th:href="@{|/posts/${post.id}|}" th:text="${post.title}" class="text-decoration-none fw-medium">제목</a>
             </td>
             <td><span class="badge bg-secondary" th:text="${post.publishMode}">NOW</span></td>
             <td><span class="badge bg-info" th:text="${post.status}">DRAFT</span></td>

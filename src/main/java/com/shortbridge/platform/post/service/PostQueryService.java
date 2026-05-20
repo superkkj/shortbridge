@@ -7,6 +7,8 @@ import com.shortbridge.platform.post.repository.PostRepository;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -23,5 +25,9 @@ public class PostQueryService {
 
   public List<Post> list(UUID userId) {
     return postRepository.findByUserIdOrderByCreatedAtDesc(userId);
+  }
+
+  public Page<Post> list(UUID userId, Pageable pageable) {
+    return postRepository.findByUserId(userId, pageable);
   }
 }

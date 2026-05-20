@@ -3,47 +3,93 @@
       th:replace="~{layout/base :: layout(title='게시물 · ShortBridge', content=~{::section})}">
 <body>
 <section>
-  <div class="d-flex justify-content-between mb-3">
-    <h1 class="h4 mb-0">게시물</h1>
-    <a th:href="@{/posts/new}" class="btn btn-primary btn-sm">
+  <div class="sb-page-head">
+    <div>
+      <h1>게시물</h1>
+      <div class="sb-subtitle" th:text="|총 ${postPage.totalElements}건|">총 0건</div>
+    </div>
+    <a th:href="@{/posts/new}" class="btn btn-primary">
       <i class="bi bi-plus-lg"></i> 새 게시물
     </a>
   </div>
 
-  <div th:if="${#lists.isEmpty(posts)}" class="alert alert-light text-center">
-    아직 작성된 게시물이 없습니다.
+  <div th:if="${postPage.totalElements == 0}" class="card sb-empty">
+    <i class="bi bi-inbox"></i>
+    <div>아직 작성된 게시물이 없습니다</div>
+    <a th:href="@{/posts/new}" class="btn btn-primary mt-3">
+      <i class="bi bi-plus-lg"></i> 첫 게시물 만들기
+    </a>
   </div>
-  <table th:unless="${#lists.isEmpty(posts)}" class="table align-middle">
-    <thead class="table-light">
-      <tr>
-        <th>제목</th><th>모드</th><th>예약</th><th>상태</th><th>플랫폼</th><th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr th:each="post : ${posts}">
-        <td><a th:href="@{|/posts/${post.id}|}" th:text="${post.title}">제목</a></td>
-        <td><span class="badge bg-secondary" th:text="${post.publishMode}">NOW</span></td>
-        <td class="text-muted small" th:text="${post.scheduledAt}">-</td>
-        <td>
-          <span class="badge"
-                th:classappend="${post.status.name() == 'PUBLISHED'} ? 'bg-success' :
-                                (${post.status.name() == 'FAILED'} ? 'bg-danger' :
-                                (${post.status.name() == 'PARTIAL_FAILED'} ? 'bg-warning text-dark' : 'bg-info'))"
-                th:text="${post.status}">QUEUED</span>
-        </td>
-        <td>
-          <span th:each="t : ${post.targets}" class="badge me-1"
-                th:classappend="${t.status.name() == 'PUBLISHED'} ? 'bg-success' :
-                                (${t.status.name() == 'FAILED_PERMANENT'} ? 'bg-danger' :
-                                (${t.status.name() == 'FAILED_TEMPORARY'} ? 'bg-warning text-dark' : 'bg-secondary'))"
-                th:text="${t.platform}">YOUTUBE</span>
-        </td>
-        <td>
-          <a th:href="@{|/posts/${post.id}|}" class="btn btn-sm btn-outline-secondary">상세</a>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+
+  <div th:unless="${postPage.totalElements == 0}" class="card">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>제목</th><th>모드</th><th>예약</th><th>상태</th><th>플랫폼</th><th>생성</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="post : ${postPage.content}">
+          <td>
+            <a th:href="@{|/posts/${post.id}|}" th:text="${post.title}" class="text-decoration-none fw-medium">제목</a>
+          </td>
+          <td><span class="badge bg-secondary" th:text="${post.publishMode}">NOW</span></td>
+          <td class="text-muted small" th:text="${post.scheduledAt} ?: '-'">-</td>
+          <td>
+            <span class="badge"
+                  th:classappend="${post.status.name() == 'PUBLISHED'} ? 'bg-success' :
+                                  (${post.status.name() == 'FAILED'} ? 'bg-danger' :
+                                  (${post.status.name() == 'PARTIAL_FAILED'} ? 'bg-warning text-dark' : 'bg-info'))"
+                  th:text="${post.status}">QUEUED</span>
+          </td>
+          <td>
+            <span th:each="t : ${post.targets}" class="badge me-1"
+                  th:classappend="${t.status.name() == 'PUBLISHED'} ? 'bg-success' :
+                                  (${t.status.name() == 'FAILED_PERMANENT'} ? 'bg-danger' :
+                                  (${t.status.name() == 'FAILED_TEMPORARY'} ? 'bg-warning text-dark' : 'bg-secondary'))"
+                  th:text="${t.platform}">YOUTUBE</span>
+          </td>
+          <td class="text-muted small" th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm', 'Asia/Seoul')}">-</td>
+          <td>
+            <a th:href="@{|/posts/${post.id}|}" class="btn btn-sm btn-outline-secondary">상세</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <nav th:if="${postPage.totalPages > 1}" class="mt-4" aria-label="페이지네이션">
+    <ul class="pagination justify-content-center mb-0">
+      <li class="page-item" th:classappend="${postPage.first} ? 'disabled'">
+        <a class="page-link" th:href="@{/posts(page=0,size=${postPage.size})}" aria-label="처음">
+          <i class="bi bi-chevron-double-left"></i>
+        </a>
+      </li>
+      <li class="page-item" th:classappend="${postPage.first} ? 'disabled'">
+        <a class="page-link" th:href="@{/posts(page=${postPage.number - 1},size=${postPage.size})}" aria-label="이전">
+          <i class="bi bi-chevron-left"></i>
+        </a>
+      </li>
+      <li class="page-item" th:each="p : ${#numbers.sequence(
+            T(java.lang.Math).max(0, postPage.number - 2),
+            T(java.lang.Math).min(postPage.totalPages - 1, postPage.number + 2))}"
+          th:classappend="${p == postPage.number} ? 'active'">
+        <a class="page-link" th:href="@{/posts(page=${p},size=${postPage.size})}" th:text="${p + 1}">1</a>
+      </li>
+      <li class="page-item" th:classappend="${postPage.last} ? 'disabled'">
+        <a class="page-link" th:href="@{/posts(page=${postPage.number + 1},size=${postPage.size})}" aria-label="다음">
+          <i class="bi bi-chevron-right"></i>
+        </a>
+      </li>
+      <li class="page-item" th:classappend="${postPage.last} ? 'disabled'">
+        <a class="page-link" th:href="@{/posts(page=${postPage.totalPages - 1},size=${postPage.size})}" aria-label="마지막">
+          <i class="bi bi-chevron-double-right"></i>
+        </a>
+      </li>
+    </ul>
+    <div class="text-center text-muted small mt-2" th:text="|${postPage.number + 1} / ${postPage.totalPages} 페이지|">1 / 1 페이지</div>
+  </nav>
 </section>
 </body>
 </html>

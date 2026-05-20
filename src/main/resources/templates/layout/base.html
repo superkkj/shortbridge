@@ -5,33 +5,63 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title th:text="${title} ?: 'ShortBridge'">ShortBridge</title>
+  <script>
+    (function () {
+      var saved = localStorage.getItem('sb-theme');
+      var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var theme = saved || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <link rel="stylesheet" th:href="@{/css/app.css}">
   <meta name="_csrf" th:content="${_csrf?.token}"/>
   <meta name="_csrf_header" th:content="${_csrf?.headerName}"/>
 </head>
-<body class="bg-body-tertiary">
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-  <div class="container-fluid">
-    <a class="navbar-brand fw-bold" th:href="@{/dashboard}">
-      <i class="bi bi-broadcast"></i> ShortBridge
+<body>
+<nav class="navbar navbar-expand-lg sb-navbar sticky-top">
+  <div class="container">
+    <a class="navbar-brand" th:href="@{/dashboard}">
+      <span class="brand-icon"><i class="bi bi-broadcast"></i></span>
+      ShortBridge
     </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
-      <span class="navbar-toggler-icon"></span>
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+      <i class="bi bi-list fs-4"></i>
     </button>
     <div class="collapse navbar-collapse" id="nav">
-      <ul class="navbar-nav me-auto">
-        <li class="nav-item"><a class="nav-link" th:href="@{/dashboard}">대시보드</a></li>
-        <li class="nav-item"><a class="nav-link" th:href="@{/videos}">영상</a></li>
-        <li class="nav-item"><a class="nav-link" th:href="@{/posts}">게시물</a></li>
-        <li class="nav-item"><a class="nav-link" th:href="@{/social-accounts}">플랫폼 연결</a></li>
+      <ul class="navbar-nav me-auto ms-lg-4" data-sb-nav>
+        <li class="nav-item">
+          <a class="nav-link" th:href="@{/dashboard}" data-path="/dashboard">
+            <i class="bi bi-grid"></i> 대시보드
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" th:href="@{/posts}" data-path="/posts">
+            <i class="bi bi-send"></i> 게시물
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" th:href="@{/social-accounts}" data-path="/social-accounts">
+            <i class="bi bi-link-45deg"></i> 플랫폼 연결
+          </a>
+        </li>
       </ul>
-      <ul class="navbar-nav" sec:authorize="isAuthenticated()">
+      <ul class="navbar-nav align-items-lg-center" sec:authorize="isAuthenticated()">
+        <li class="nav-item me-lg-2 mb-2 mb-lg-0">
+          <button type="button" id="sb-theme-toggle" class="btn btn-outline-secondary btn-sm" title="테마 전환" aria-label="테마 전환">
+            <i class="bi" data-theme-icon></i>
+          </button>
+        </li>
+        <li class="nav-item">
+          <a th:href="@{/posts/new}" class="btn btn-primary btn-sm me-lg-3 mb-2 mb-lg-0">
+            <i class="bi bi-plus-lg"></i> 새 게시물
+          </a>
+        </li>
         <li class="nav-item">
           <form th:action="@{/logout}" method="post" class="d-inline">
             <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-            <button type="submit" class="btn btn-outline-light btn-sm">
+            <button type="submit" class="btn btn-outline-secondary btn-sm">
               <i class="bi bi-box-arrow-right"></i> 로그아웃
             </button>
           </form>
@@ -45,11 +75,35 @@
   <div th:replace="${content}">기본 컨텐츠</div>
 </main>
 
-<footer class="py-3 text-center text-muted small">
-  <span>ShortBridge &middot; 숏폼 멀티 업로드</span>
+<footer class="py-4 text-center text-muted small">
+  <span>ShortBridge &middot; 영상 하나로 모든 숏폼 플랫폼에 동시 발행</span>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script th:src="@{/js/app.js}"></script>
+<script>
+  (function () {
+    var path = window.location.pathname;
+    document.querySelectorAll('[data-sb-nav] .nav-link[data-path]').forEach(function (el) {
+      if (path.indexOf(el.getAttribute('data-path')) === 0) el.classList.add('active');
+    });
+
+    function applyThemeIcon() {
+      var t = document.documentElement.getAttribute('data-theme');
+      document.querySelectorAll('[data-theme-icon]').forEach(function (i) {
+        i.className = 'bi ' + (t === 'dark' ? 'bi-sun-fill' : 'bi-moon-stars-fill');
+      });
+    }
+    applyThemeIcon();
+    var btn = document.getElementById('sb-theme-toggle');
+    if (btn) btn.addEventListener('click', function () {
+      var cur = document.documentElement.getAttribute('data-theme');
+      var next = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('sb-theme', next);
+      applyThemeIcon();
+    });
+  })();
+</script>
 </body>
 </html>

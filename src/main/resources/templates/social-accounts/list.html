@@ -3,74 +3,121 @@
       th:replace="~{layout/base :: layout(title='플랫폼 연결 · ShortBridge', content=~{::section})}">
 <body>
 <section>
-  <h1 class="h4 mb-3">플랫폼 계정 연결</h1>
-  <div class="alert alert-info small">
-    <i class="bi bi-info-circle"></i>
-    영상을 게시하려면 각 플랫폼 계정을 연결해야 합니다. 이 권한은 서비스 로그인과 별도로 관리됩니다.
+  <div class="sb-page-head">
+    <div>
+      <h1>플랫폼 계정 연결</h1>
+      <div class="sb-subtitle">영상을 게시하려면 각 플랫폼 계정을 연결해야 합니다 (서비스 로그인과 별도)</div>
+    </div>
   </div>
 
-  <div class="row g-3">
-    <div class="col-md-6">
-      <div class="card">
+  <div class="row g-3 mb-4">
+    <!-- YouTube -->
+    <div class="col-md-6 col-lg-4">
+      <div class="card sb-hover h-100">
         <div class="card-body">
-          <h5 class="card-title"><i class="bi bi-youtube text-danger"></i> YouTube</h5>
-          <p class="text-muted small">videos.insert · scope: youtube.upload</p>
+          <h5 class="card-title mb-2"><i class="bi bi-youtube text-danger"></i> YouTube Shorts</h5>
+          <p class="text-muted small mb-2">scope: <code>youtube.upload</code></p>
+          <ul class="small text-muted ps-3 mb-3">
+            <li>1일 업로드 쿼터 제한 (Google API)</li>
+            <li>60초 이하 9:16 세로 영상 권장</li>
+            <li>토큰 자동 갱신 (refresh token)</li>
+          </ul>
           <a class="btn btn-outline-danger btn-sm" th:href="@{/connect/youtube}">
-            <i class="bi bi-link-45deg"></i> 연결
+            <i class="bi bi-link-45deg"></i> YouTube 연결
           </a>
         </div>
       </div>
     </div>
-    <div class="col-md-6">
-      <div class="card">
+
+    <!-- TikTok -->
+    <div class="col-md-6 col-lg-4">
+      <div class="card sb-hover h-100">
         <div class="card-body">
-          <h5 class="card-title"><i class="bi bi-instagram"></i> Instagram Reels</h5>
-          <p class="text-muted small">Professional 계정 필요</p>
+          <h5 class="card-title mb-2"><i class="bi bi-tiktok"></i> TikTok</h5>
+          <p class="text-muted small mb-2">scope: <code>video.publish</code>, <code>video.upload</code></p>
+          <ul class="small text-muted ps-3 mb-2">
+            <li>현재 <strong>unaudited</strong> 상태 — 모든 영상 강제 <code>SELF_ONLY</code> (자기 자신만 보임)</li>
+            <li>발행 이후 공개 전환은 TikTok 앱에서 사용자가 직접 변경</li>
+            <li>최대 5명 사용자 / 24시간, 계정 자체가 private 이어야 함</li>
+            <li>음원/캡션 정책 위반 시 영구 차단 위험</li>
+          </ul>
+          <details class="small mb-2">
+            <summary class="text-primary" style="cursor:pointer;">audit 통과 후 변화</summary>
+            <div class="mt-2 ps-3 text-muted">
+              <code>PUBLIC_TO_EVERYONE</code> / <code>MUTUAL_FOLLOW_FRIENDS</code> 직접 발행 가능. audit 신청 검토 2~4주.
+            </div>
+          </details>
+          <a class="btn btn-outline-dark btn-sm" th:href="@{/connect/tiktok}">
+            <i class="bi bi-link-45deg"></i> TikTok 연결
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Instagram -->
+    <div class="col-md-6 col-lg-4">
+      <div class="card sb-hover h-100">
+        <div class="card-body">
+          <h5 class="card-title mb-2"><i class="bi bi-instagram text-pink"></i> Instagram Reels</h5>
+          <p class="text-muted small mb-2">Graph API (Facebook 연동)</p>
+          <ul class="small text-muted ps-3 mb-3">
+            <li>Instagram <strong>Professional 계정</strong> 필수 (Business 또는 Creator)</li>
+            <li>Facebook 페이지 연결 필요</li>
+            <li>Meta App Review 통과 후 활성 (현재 OAuth 등록 대기)</li>
+            <li>15초~90초 세로 영상 권장</li>
+          </ul>
           <button class="btn btn-outline-secondary btn-sm" disabled>
-            <i class="bi bi-link-45deg"></i> 연결 (Instagram OAuth 등록 대기)
+            <i class="bi bi-clock-history"></i> Instagram OAuth 등록 대기
           </button>
         </div>
       </div>
     </div>
-    <div class="col-md-6">
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title"><i class="bi bi-tiktok"></i> TikTok</h5>
-          <p class="text-muted small">scope: video.publish · audit 전 private 제한</p>
-          <a class="btn btn-outline-dark btn-sm" th:href="@{/connect/tiktok}">
-            <i class="bi bi-link-45deg"></i> 연결
-          </a>
-        </div>
-      </div>
-    </div>
   </div>
 
-  <h2 class="h5 mt-4">연결된 계정</h2>
-  <div th:if="${#lists.isEmpty(socialAccounts)}" class="text-muted small">아직 연결된 플랫폼이 없습니다.</div>
+  <!-- 연결된 계정 -->
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span><i class="bi bi-check2-circle"></i> 연결된 계정</span>
+      <span class="small text-muted" th:if="${not #lists.isEmpty(socialAccounts)}" th:text="|${#lists.size(socialAccounts)}건|">0건</span>
+    </div>
+    <div class="card-body p-0">
+      <div th:if="${#lists.isEmpty(socialAccounts)}" class="sb-empty">
+        <i class="bi bi-link-45deg"></i>
+        <div>아직 연결된 플랫폼이 없습니다</div>
+        <div class="text-muted small mt-1">위 카드에서 플랫폼을 선택해 연결하세요</div>
+      </div>
 
-  <table th:unless="${#lists.isEmpty(socialAccounts)}" class="table align-middle">
-    <thead class="table-light">
-      <tr>
-        <th>플랫폼</th><th>표시 이름</th><th>상태</th><th>토큰 만료</th><th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr th:each="acc : ${socialAccounts}">
-        <td><span class="badge bg-secondary" th:text="${acc.platform}">YOUTUBE</span></td>
-        <td th:text="${acc.displayName}">-</td>
-        <td>
-          <span class="badge"
-                th:classappend="${acc.status.name() == 'CONNECTED'} ? 'bg-success' : 'bg-warning text-dark'"
-                th:text="${acc.status}">CONNECTED</span>
-        </td>
-        <td class="text-muted small" th:text="${acc.tokenExpiresAt}">-</td>
-        <td>
-          <button class="btn btn-sm btn-outline-danger js-disconnect"
-                  th:data-id="${acc.id}">연결 해제</button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+      <table th:unless="${#lists.isEmpty(socialAccounts)}" class="table mb-0">
+        <thead>
+          <tr>
+            <th>플랫폼</th><th>표시 이름</th><th>상태</th><th>토큰 만료</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="acc : ${socialAccounts}">
+            <td><span class="badge bg-secondary" th:text="${acc.platform}">YOUTUBE</span></td>
+            <td class="fw-medium" th:text="${acc.displayName}">-</td>
+            <td>
+              <span class="badge"
+                    th:classappend="${acc.status.name() == 'CONNECTED'} ? 'bg-success' : 'bg-warning text-dark'"
+                    th:text="${acc.status}">CONNECTED</span>
+            </td>
+            <td class="small">
+              <span th:if="${acc.tokenExpiresAt != null}"
+                    th:text="${#temporals.format(acc.tokenExpiresAt, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul') + ' KST'}">
+                2026-05-21 11:09:06 KST
+              </span>
+              <span th:if="${acc.tokenExpiresAt == null}" class="text-muted">만료 없음</span>
+            </td>
+            <td>
+              <button class="btn btn-sm btn-outline-danger js-disconnect"
+                      th:data-id="${acc.id}">연결 해제</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </section>
 </body>
 </html>

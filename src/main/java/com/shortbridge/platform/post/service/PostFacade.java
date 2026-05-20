@@ -24,6 +24,8 @@ import com.shortbridge.publish.dto.EnqueueRequest;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,6 +46,13 @@ public class PostFacade {
     return postQueryService.list(userId).stream()
         .map(p -> PostResponse.from(p, postTargetQueryService.findByPostId(userId, p.getId())))
         .toList();
+  }
+
+  @Transactional(readOnly = true)
+  public Page<PostResponse> list(UUID userId, Pageable pageable) {
+    return postQueryService
+        .list(userId, pageable)
+        .map(p -> PostResponse.from(p, postTargetQueryService.findByPostId(userId, p.getId())));
   }
 
   @Transactional(readOnly = true)

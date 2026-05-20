@@ -18,7 +18,7 @@
       <select name="videoId" class="form-select" required>
         <option value="">선택하세요</option>
         <option th:each="v : ${videos}" th:value="${v.id}"
-                th:text="${v.originalFileName + ' (' + v.durationSeconds + 's)'}">영상</option>
+                th:text="${v.originalFileName + ' · ' + v.durationSeconds + 's · 업로드 ' + #temporals.format(v.createdAt, 'yyyy-MM-dd HH:mm', 'Asia/Seoul')}">영상</option>
       </select>
     </div>
     <div class="mb-3">
