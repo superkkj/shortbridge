@@ -57,13 +57,30 @@
       <input type="text" name="hashtags" class="form-control" placeholder="shorts, reels, viral">
     </div>
     <div class="mb-3">
-      <label class="form-label">발행 대상</label>
-      <div class="d-flex flex-wrap gap-2">
-        <label th:each="acc : ${socialAccounts}" class="form-check form-check-inline">
-          <input type="checkbox" class="form-check-input" name="targets" th:value="${acc.platform}">
-          <span class="form-check-label" th:text="${acc.platform + ' · ' + acc.displayName}">PLATFORM</span>
+      <label class="form-label fw-semibold mb-2">발행 대상</label>
+      <div class="sb-platform-grid">
+        <label th:each="acc : ${socialAccounts}"
+               class="sb-platform-card"
+               th:classappend="'sb-platform-' + ${#strings.toLowerCase(acc.platform.name())}">
+          <input type="checkbox" class="sb-platform-input" name="targets" th:value="${acc.platform}">
+          <span class="sb-platform-icon">
+            <i class="bi"
+               th:classappend="${acc.platform.name() == 'YOUTUBE'} ? 'bi-youtube' :
+                               (${acc.platform.name() == 'INSTAGRAM'} ? 'bi-instagram' : 'bi-tiktok')"></i>
+          </span>
+          <span class="sb-platform-meta">
+            <span class="sb-platform-name" th:text="${acc.platform}">PLATFORM</span>
+            <span class="sb-platform-account" th:text="${acc.displayName}">@account</span>
+            <span class="sb-platform-note" th:if="${acc.platform.name() == 'TIKTOK'}">
+              <i class="bi bi-info-circle"></i> 자기만 보기로 업로드됩니다
+            </span>
+          </span>
+          <span class="sb-platform-check">
+            <i class="bi bi-check-circle-fill"></i>
+          </span>
         </label>
       </div>
+      <div class="form-text mt-2">카드를 눌러 발행할 플랫폼을 선택하세요. 여러 개 동시 선택 가능합니다.</div>
     </div>
     <div class="mb-3">
       <label class="form-label">발행 모드</label>

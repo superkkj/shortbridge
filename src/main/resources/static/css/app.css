@@ -251,3 +251,34 @@ body {
 .sb-page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
 .sb-page-head h1 { font-size: 1.6rem; font-weight: 700; margin: 0; color: var(--sb-text); }
 .sb-page-head .sb-subtitle { color: var(--sb-text-muted); font-size: .9rem; margin-top: .15rem; }
+
+/* ===== Platform Selection Cards ===== */
+.sb-platform-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .75rem; }
+.sb-platform-card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+  padding: 1rem;
+  background: var(--sb-surface);
+  border: 2px solid var(--sb-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all .15s ease;
+  user-select: none;
+}
+.sb-platform-card:hover { border-color: var(--sb-primary); background: var(--sb-surface-alt); transform: translateY(-1px); }
+.sb-platform-input { position: absolute; opacity: 0; pointer-events: none; }
+.sb-platform-icon { flex-shrink: 0; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #fff; }
+.sb-platform-youtube .sb-platform-icon { background: #FF0000; }
+.sb-platform-instagram .sb-platform-icon { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+.sb-platform-tiktok .sb-platform-icon { background: #000; }
+.sb-platform-meta { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.sb-platform-name { font-weight: 600; font-size: .85rem; letter-spacing: .03em; color: var(--sb-text); }
+.sb-platform-account { font-size: .85rem; color: var(--sb-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sb-platform-note { font-size: .75rem; color: #b45309; margin-top: .25rem; display: flex; align-items: center; gap: .25rem; }
+[data-theme="dark"] .sb-platform-note { color: #fbbf24; }
+.sb-platform-check { position: absolute; top: .6rem; right: .6rem; color: var(--sb-primary); font-size: 1.25rem; opacity: 0; transition: opacity .15s; }
+.sb-platform-card:has(.sb-platform-input:checked) { border-color: var(--sb-primary); background: var(--sb-primary-light); box-shadow: 0 4px 12px rgba(99, 102, 241, .15); }
+.sb-platform-card:has(.sb-platform-input:checked) .sb-platform-check { opacity: 1; }
+.sb-platform-card:has(.sb-platform-input:checked) .sb-platform-name { color: var(--sb-primary); }
