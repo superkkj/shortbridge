@@ -5,7 +5,6 @@ import com.shortbridge.platform.posttarget.domain.PostTarget;
 import com.shortbridge.platform.publishjob.domain.PublishJob;
 import com.shortbridge.platform.publishjob.repository.PublishJobRepository;
 import com.shortbridge.platform.socialaccount.domain.Platform;
-import com.shortbridge.support.rabbitmq.QueueNames;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,7 +21,7 @@ public class PublishJobCommandService {
         PublishJob.builder()
             .postTargetId(target.getId())
             .platform(target.getPlatform())
-            .queueName(QueueNames.forPlatform(target.getPlatform().name()))
+            .queueName(target.getPlatform().queueName())
             .idempotencyKey(IdempotencyKeys.forPostTarget(target.getPostId(), target.getPlatform().name()))
             .attempt((int) previousAttempts + 1)
             .build());
@@ -34,7 +33,7 @@ public class PublishJobCommandService {
         PublishJob.builder()
             .postTargetId(postTargetId)
             .platform(platform)
-            .queueName(QueueNames.forPlatform(platform.name()))
+            .queueName(platform.queueName())
             .idempotencyKey(IdempotencyKeys.forPostTarget(postId, platform.name()))
             .attempt((int) previousAttempts + 1)
             .build());

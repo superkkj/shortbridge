@@ -4,7 +4,6 @@ import com.shortbridge.common.util.IdempotencyKeys;
 import com.shortbridge.platform.publishjob.service.PublishJobCommandService;
 import com.shortbridge.publish.dto.EnqueueRequest;
 import com.shortbridge.publish.dto.PublishMessage;
-import com.shortbridge.support.rabbitmq.QueueNames;
 import com.shortbridge.support.rabbitmq.RabbitConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +23,7 @@ public class RabbitPublishGateway implements PublishGateway {
   @Transactional
   public void enqueue(EnqueueRequest request) {
     var job = publishJobCommandService.enqueueStub(request.postTargetId(), request.postId(), request.platform());
-    String routingKey = QueueNames.forPlatform(request.platform().name());
+    String routingKey = request.platform().queueName();
     PublishMessage message =
         new PublishMessage(
             request.postTargetId(),

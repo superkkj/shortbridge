@@ -14,21 +14,12 @@ public class PublishWorker {
 
   private final PublishProcessor processor;
 
-  @RabbitListener(queues = QueueNames.YOUTUBE)
-  public void handleYoutube(PublishMessage message) {
-    log.info("received publish message: queue={} target={}", QueueNames.YOUTUBE, message.postTargetId());
-    processor.process(message);
-  }
-
-  @RabbitListener(queues = QueueNames.INSTAGRAM)
-  public void handleInstagram(PublishMessage message) {
-    log.info("received publish message: queue={} target={}", QueueNames.INSTAGRAM, message.postTargetId());
-    processor.process(message);
-  }
-
-  @RabbitListener(queues = QueueNames.TIKTOK)
-  public void handleTiktok(PublishMessage message) {
-    log.info("received publish message: queue={} target={}", QueueNames.TIKTOK, message.postTargetId());
+  @RabbitListener(queues = {QueueNames.YOUTUBE, QueueNames.INSTAGRAM, QueueNames.TIKTOK})
+  public void handle(PublishMessage message) {
+    log.info(
+        "received publish message: platform={} target={}",
+        message.platform(),
+        message.postTargetId());
     processor.process(message);
   }
 }

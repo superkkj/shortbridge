@@ -19,7 +19,6 @@ import com.shortbridge.publish.dto.PublishOutcome;
 import com.shortbridge.publish.publisher.PublishContext;
 import com.shortbridge.publish.publisher.PublisherRegistry;
 import com.shortbridge.publish.publisher.SocialPublisher;
-import com.shortbridge.support.rabbitmq.QueueNames;
 import java.net.InetAddress;
 import java.time.Instant;
 import java.util.UUID;
@@ -129,7 +128,7 @@ public class PublishProcessor {
                     PublishJob.builder()
                         .postTargetId(message.postTargetId())
                         .platform(message.platform())
-                        .queueName(QueueNames.forPlatform(message.platform().name()))
+                        .queueName(message.platform().queueName())
                         .idempotencyKey(message.idempotencyKey())
                         .attempt(message.attempt())
                         .build()));
