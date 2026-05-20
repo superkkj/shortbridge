@@ -270,4 +270,12 @@ gradle build -x test
 
 ---
 
-*Last Updated: 2026-05-18*
+*Last Updated: 2026-05-20*
+
+## 🌐 Deployment
+
+- **Production URL**: https://shortbridge.onrender.com
+- **Platform**: Render Free (Singapore region)
+- **Auto-deploy**: master branch push 시 자동 재배포
+- **DB**: Neon PostgreSQL 17 (Singapore)
+- **Queue**: CloudAMQP Little Lemur (Singapore)
