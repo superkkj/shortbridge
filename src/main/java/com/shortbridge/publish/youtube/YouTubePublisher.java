@@ -12,9 +12,11 @@ import com.shortbridge.publish.publisher.PublishContext;
 import com.shortbridge.publish.publisher.PublisherHttp;
 import com.shortbridge.publish.publisher.SocialPublisher;
 import com.shortbridge.support.security.token.PlatformTokenCipher;
-import java.io.ByteArrayOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.SequenceInputStream;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpRequest;
@@ -22,8 +24,11 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -63,21 +68,13 @@ public class YouTubePublisher implements SocialPublisher {
       return PublishOutcome.reconnectRequired("access token empty");
     }
 
-    byte[] videoBytes;
-    try (InputStream is = storageClient.open(video.getStorageKey())) {
-      videoBytes = is.readAllBytes();
-    } catch (IOException e) {
-      log.error("youtube video read failed: storageKey={}", video.getStorageKey(), e);
-      return PublishOutcome.failedTemporary(
-          "STORAGE_READ_FAILED", e.getMessage(), Instant.now().plusSeconds(60));
-    }
-
     String snippetJson = buildSnippetJson(context, video);
     String boundary = "shortbridge-boundary-" + System.nanoTime();
-    byte[] body = buildMultipartBody(boundary, snippetJson, video, videoBytes);
+    byte[] prefix = multipartPrefix(boundary, snippetJson, video);
+    byte[] suffix = multipartSuffix(boundary);
 
     try {
-      HttpResponse<String> response = uploadVideo(accessToken, boundary, body);
+      HttpResponse<String> response = uploadVideo(accessToken, boundary, prefix, suffix, video);
       int status = response.statusCode();
       String responseBody = response.body();
       log.info(
@@ -89,7 +86,7 @@ public class YouTubePublisher implements SocialPublisher {
         log.info("youtube 401 detected, attempting token refresh");
         String newToken = refreshAccessToken(account);
         if (newToken != null) {
-          response = uploadVideo(newToken, boundary, body);
+          response = uploadVideo(newToken, boundary, prefix, suffix, video);
           status = response.statusCode();
           responseBody = response.body();
           log.info("youtube retry after refresh: status={}", status);
@@ -119,6 +116,10 @@ public class YouTubePublisher implements SocialPublisher {
       }
       log.info("youtube publish success: videoId={} url=https://youtube.com/watch?v={}", videoId, videoId);
       return PublishOutcome.success(videoId, null, responseBody);
+    } catch (UncheckedIOException e) {
+      log.error("youtube video read failed: storageKey={}", video.getStorageKey(), e);
+      return PublishOutcome.failedTemporary(
+          "STORAGE_READ_FAILED", e.getMessage(), Instant.now().plusSeconds(60));
     } catch (IOException | InterruptedException e) {
       if (e instanceof InterruptedException) Thread.currentThread().interrupt();
       log.error("youtube videos.insert IO error", e);
@@ -127,14 +128,27 @@ public class YouTubePublisher implements SocialPublisher {
     }
   }
 
-  private HttpResponse<String> uploadVideo(String accessToken, String boundary, byte[] body)
+  private HttpResponse<String> uploadVideo(
+      String accessToken, String boundary, byte[] prefix, byte[] suffix, Video video)
       throws IOException, InterruptedException {
+    long total = (long) prefix.length + video.getFileSize() + suffix.length;
+    Supplier<InputStream> bodyStream =
+        () ->
+            new SequenceInputStream(
+                Collections.enumeration(
+                    List.of(
+                        new ByteArrayInputStream(prefix),
+                        storageClient.open(video.getStorageKey()),
+                        new ByteArrayInputStream(suffix))));
+    HttpRequest.BodyPublisher body =
+        HttpRequest.BodyPublishers.fromPublisher(
+            HttpRequest.BodyPublishers.ofInputStream(bodyStream), total);
     HttpRequest request =
         http.bearer(UPLOAD_URL, accessToken)
-            .timeout(Duration.ofMinutes(5))
+            .timeout(Duration.ofMinutes(30))
             .header("Content-Type", "multipart/related; boundary=" + boundary)
             .header("Accept", "application/json")
-            .POST(HttpRequest.BodyPublishers.ofByteArray(body))
+            .POST(body)
             .build();
     return http.send(request);
   }
@@ -167,22 +181,19 @@ public class YouTubePublisher implements SocialPublisher {
     }
   }
 
-  private byte[] buildMultipartBody(String boundary, String snippetJson, Video video, byte[] videoBytes) {
-    try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-      String prefix =
-          "--" + boundary + "\r\n"
-              + "Content-Type: application/json; charset=UTF-8\r\n\r\n"
-              + snippetJson + "\r\n"
-              + "--" + boundary + "\r\n"
-              + "Content-Type: " + (video.getMimeType() == null ? "video/mp4" : video.getMimeType()) + "\r\n\r\n";
-      String suffix = "\r\n--" + boundary + "--\r\n";
-      out.write(prefix.getBytes(StandardCharsets.UTF_8));
-      out.write(videoBytes);
-      out.write(suffix.getBytes(StandardCharsets.UTF_8));
-      return out.toByteArray();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+  private byte[] multipartPrefix(String boundary, String snippetJson, Video video) {
+    String mime = video.getMimeType() == null ? "video/mp4" : video.getMimeType();
+    String s =
+        "--" + boundary + "\r\n"
+            + "Content-Type: application/json; charset=UTF-8\r\n\r\n"
+            + snippetJson + "\r\n"
+            + "--" + boundary + "\r\n"
+            + "Content-Type: " + mime + "\r\n\r\n";
+    return s.getBytes(StandardCharsets.UTF_8);
+  }
+
+  private byte[] multipartSuffix(String boundary) {
+    return ("\r\n--" + boundary + "--\r\n").getBytes(StandardCharsets.UTF_8);
   }
 
   private String refreshAccessToken(SocialAccount account) {
