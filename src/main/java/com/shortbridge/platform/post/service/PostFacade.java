@@ -127,8 +127,6 @@ public class PostFacade {
 
   private PostTarget createTarget(CreatePostCommand command, Post post, Platform platform) {
     SocialAccount socialAccount = socialAccountQueryService.getConnected(command.userId(), platform);
-    PostTargetStatus initial =
-        command.publishMode() == PublishMode.DRAFT ? PostTargetStatus.READY : PostTargetStatus.READY;
     PostTarget target =
         PostTarget.builder()
             .userId(command.userId())
@@ -140,7 +138,7 @@ public class PostFacade {
             .platformHashtags(JsonUtils.joinHashtags(command.hashtags()))
             .privacyStatus("PRIVATE")
             .scheduledAt(command.scheduledAt())
-            .initialStatus(initial)
+            .initialStatus(PostTargetStatus.READY)
             .idempotencyKey(IdempotencyKeys.forPostTarget(post.getId(), platform.name()))
             .build();
     return postTargetCommandService.create(target);
