@@ -13,6 +13,8 @@ public enum ErrorCode {
   FORBIDDEN(403, "A002", "권한이 없습니다"),
 
   // 404
+  ROUTE_NOT_FOUND(404, "C404", "요청하신 페이지를 찾을 수 없습니다"),
+  METHOD_NOT_ALLOWED(405, "C405", "허용되지 않은 요청 방식입니다"),
   USER_NOT_FOUND(404, "U001", "사용자를 찾을 수 없습니다: %s"),
   LOGIN_ACCOUNT_NOT_FOUND(404, "L001", "로그인 계정을 찾을 수 없습니다: %s"),
   SOCIAL_ACCOUNT_NOT_FOUND(404, "S001", "플랫폼 계정을 찾을 수 없습니다: %s"),
