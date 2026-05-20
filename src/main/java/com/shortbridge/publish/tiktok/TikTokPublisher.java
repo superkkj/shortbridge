@@ -115,13 +115,11 @@ public class TikTokPublisher implements SocialPublisher {
   private PublishOutcome uploadChunks(
       String uploadUrl, Video video, long fileSize, long chunkSize, int totalChunks) {
     try (InputStream is = storageClient.open(video.getStorageKey())) {
-      byte[] all = is.readAllBytes();
       for (int i = 0; i < totalChunks; i++) {
         long start = i * chunkSize;
         long end = Math.min(start + chunkSize, fileSize) - 1;
         int len = (int) (end - start + 1);
-        byte[] chunk = new byte[len];
-        System.arraycopy(all, (int) start, chunk, 0, len);
+        byte[] chunk = readExactly(is, len);
 
         HttpRequest request =
             http.uploadBuilder(uploadUrl, "video/mp4")
@@ -146,6 +144,19 @@ public class TikTokPublisher implements SocialPublisher {
       return PublishOutcome.failedTemporary(
           "TT_UPLOAD_IO", e.getMessage(), Instant.now().plusSeconds(60));
     }
+  }
+
+  private static byte[] readExactly(InputStream is, int len) throws IOException {
+    byte[] buf = new byte[len];
+    int off = 0;
+    while (off < len) {
+      int n = is.read(buf, off, len - off);
+      if (n < 0) {
+        throw new IOException("unexpected EOF: read " + off + " of " + len);
+      }
+      off += n;
+    }
+    return buf;
   }
 
   private JsonNode pollStatus(String accessToken, String publishId) {
