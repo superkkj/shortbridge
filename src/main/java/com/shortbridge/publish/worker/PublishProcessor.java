@@ -21,6 +21,7 @@ import com.shortbridge.publish.publisher.PublisherRegistry;
 import com.shortbridge.publish.publisher.SocialPublisher;
 import java.net.InetAddress;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -141,21 +142,11 @@ public class PublishProcessor {
 
   private void updatePostStatusAfterTarget(PostTarget target) {
     Post post = postRepository.findById(target.getPostId()).orElseThrow();
-    var targets = postTargetQueryService.findByPostId(post.getUserId(), post.getId());
-    boolean allTerminal = targets.stream().allMatch(t -> t.getStatus().isTerminal());
-    boolean anySuccess = targets.stream().anyMatch(t -> t.getStatus() == PostTargetStatus.PUBLISHED);
-    boolean anyFail = targets.stream().anyMatch(t -> t.getStatus() == PostTargetStatus.FAILED_PERMANENT);
-    boolean anyProcessing = targets.stream().anyMatch(t -> !t.getStatus().isTerminal());
-
-    if (anyProcessing) {
-      post.changeStatus(PostStatus.PROCESSING);
-    } else if (allTerminal && anySuccess && anyFail) {
-      post.changeStatus(PostStatus.PARTIAL_FAILED);
-    } else if (allTerminal && anySuccess) {
-      post.changeStatus(PostStatus.PUBLISHED);
-    } else if (allTerminal) {
-      post.changeStatus(PostStatus.FAILED);
-    }
+    List<PostTargetStatus> statuses =
+        postTargetQueryService.findByPostId(post.getUserId(), post.getId()).stream()
+            .map(PostTarget::getStatus)
+            .toList();
+    PostStatus.recomputeFrom(statuses).ifPresent(post::changeStatus);
   }
 
   private static String resolveWorkerId() {
