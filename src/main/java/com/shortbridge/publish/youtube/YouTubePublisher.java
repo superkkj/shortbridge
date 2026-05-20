@@ -1,7 +1,6 @@
 package com.shortbridge.publish.youtube;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shortbridge.common.storage.StorageClient;
 import com.shortbridge.connect.connector.ConnectorProperties;
 import com.shortbridge.platform.socialaccount.domain.Platform;
@@ -10,21 +9,20 @@ import com.shortbridge.platform.socialaccount.repository.SocialAccountRepository
 import com.shortbridge.platform.video.domain.Video;
 import com.shortbridge.publish.dto.PublishOutcome;
 import com.shortbridge.publish.publisher.PublishContext;
+import com.shortbridge.publish.publisher.PublisherHttp;
 import com.shortbridge.publish.publisher.SocialPublisher;
 import com.shortbridge.support.security.token.PlatformTokenCipher;
-import java.net.URLEncoder;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.net.http.HttpClient;
+import java.net.URLEncoder;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,9 +41,7 @@ public class YouTubePublisher implements SocialPublisher {
   private final StorageClient storageClient;
   private final ConnectorProperties connectorProperties;
   private final SocialAccountRepository socialAccountRepository;
-  private final ObjectMapper mapper = new ObjectMapper();
-  private final HttpClient httpClient =
-      HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).build();
+  private final PublisherHttp http;
 
   @Override
   public Platform platform() {
@@ -80,17 +76,8 @@ public class YouTubePublisher implements SocialPublisher {
     String boundary = "shortbridge-boundary-" + System.nanoTime();
     byte[] body = buildMultipartBody(boundary, snippetJson, video, videoBytes);
 
-    HttpRequest request =
-        HttpRequest.newBuilder(URI.create(UPLOAD_URL))
-            .timeout(Duration.ofMinutes(5))
-            .header("Authorization", "Bearer " + accessToken)
-            .header("Content-Type", "multipart/related; boundary=" + boundary)
-            .header("Accept", "application/json")
-            .POST(HttpRequest.BodyPublishers.ofByteArray(body))
-            .build();
-
     try {
-      HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+      HttpResponse<String> response = uploadVideo(accessToken, boundary, body);
       int status = response.statusCode();
       String responseBody = response.body();
       log.info(
@@ -102,15 +89,7 @@ public class YouTubePublisher implements SocialPublisher {
         log.info("youtube 401 detected, attempting token refresh");
         String newToken = refreshAccessToken(account);
         if (newToken != null) {
-          HttpRequest retry =
-              HttpRequest.newBuilder(URI.create(UPLOAD_URL))
-                  .timeout(Duration.ofMinutes(5))
-                  .header("Authorization", "Bearer " + newToken)
-                  .header("Content-Type", "multipart/related; boundary=" + boundary)
-                  .header("Accept", "application/json")
-                  .POST(HttpRequest.BodyPublishers.ofByteArray(body))
-                  .build();
-          response = httpClient.send(retry, HttpResponse.BodyHandlers.ofString());
+          response = uploadVideo(newToken, boundary, body);
           status = response.statusCode();
           responseBody = response.body();
           log.info("youtube retry after refresh: status={}", status);
@@ -133,7 +112,7 @@ public class YouTubePublisher implements SocialPublisher {
         return PublishOutcome.failedPermanent("YT_" + status, responseBody);
       }
 
-      JsonNode root = mapper.readTree(responseBody);
+      JsonNode root = http.parse(responseBody);
       String videoId = root.path("id").asText(null);
       if (videoId == null || videoId.isBlank()) {
         return PublishOutcome.failedPermanent("YT_NO_ID", responseBody);
@@ -141,21 +120,33 @@ public class YouTubePublisher implements SocialPublisher {
       log.info("youtube publish success: videoId={} url=https://youtube.com/watch?v={}", videoId, videoId);
       return PublishOutcome.success(videoId, null, responseBody);
     } catch (IOException | InterruptedException e) {
-      Thread.currentThread().interrupt();
+      if (e instanceof InterruptedException) Thread.currentThread().interrupt();
       log.error("youtube videos.insert IO error", e);
       return PublishOutcome.failedTemporary(
           "YT_IO_ERROR", e.getMessage(), Instant.now().plusSeconds(60));
     }
   }
 
+  private HttpResponse<String> uploadVideo(String accessToken, String boundary, byte[] body)
+      throws IOException, InterruptedException {
+    HttpRequest request =
+        http.bearer(UPLOAD_URL, accessToken)
+            .timeout(Duration.ofMinutes(5))
+            .header("Content-Type", "multipart/related; boundary=" + boundary)
+            .header("Accept", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofByteArray(body))
+            .build();
+    return http.send(request);
+  }
+
   private String buildSnippetJson(PublishContext context, Video video) {
     Map<String, Object> snippet = new HashMap<>();
     String title = context.target().getPlatformTitle();
     if (title == null || title.isBlank()) title = video.getOriginalFileName();
-    snippet.put("title", limit(title, 100));
+    snippet.put("title", PublisherHttp.limit(title, 100));
     String description = context.target().getPlatformDescription();
     if (description != null && !description.isBlank()) {
-      snippet.put("description", limit(description, 5000));
+      snippet.put("description", PublisherHttp.limit(description, 5000));
     }
     if (context.hashtags() != null && !context.hashtags().isEmpty()) {
       snippet.put("tags", context.hashtags().stream().limit(15).toList());
@@ -170,7 +161,7 @@ public class YouTubePublisher implements SocialPublisher {
     root.put("snippet", snippet);
     root.put("status", status);
     try {
-      return mapper.writeValueAsString(root);
+      return http.writeJson(root);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -194,16 +185,6 @@ public class YouTubePublisher implements SocialPublisher {
     }
   }
 
-  private static String limit(String s, int max) {
-    if (s == null) return null;
-    return s.length() <= max ? s : s.substring(0, max);
-  }
-
-  @SuppressWarnings("unused")
-  private static List<String> unused() {
-    return List.of();
-  }
-
   private String refreshAccessToken(SocialAccount account) {
     try {
       String refreshToken = tokenCipher.decrypt(account.getRefreshTokenEncrypted());
@@ -223,12 +204,12 @@ public class YouTubePublisher implements SocialPublisher {
               .header("Accept", "application/json")
               .POST(HttpRequest.BodyPublishers.ofString(body))
               .build();
-      HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+      HttpResponse<String> resp = http.send(req);
       if (resp.statusCode() / 100 != 2) {
         log.warn("youtube refresh failed: status={} body={}", resp.statusCode(), resp.body());
         return null;
       }
-      JsonNode json = mapper.readTree(resp.body());
+      JsonNode json = http.parse(resp.body());
       String newAccess = json.path("access_token").asText(null);
       long expiresIn = json.path("expires_in").asLong(3600);
       if (newAccess == null) return null;

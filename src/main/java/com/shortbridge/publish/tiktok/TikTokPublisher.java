@@ -1,23 +1,19 @@
 package com.shortbridge.publish.tiktok;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shortbridge.common.storage.StorageClient;
 import com.shortbridge.platform.socialaccount.domain.Platform;
 import com.shortbridge.platform.socialaccount.domain.SocialAccount;
 import com.shortbridge.platform.video.domain.Video;
 import com.shortbridge.publish.dto.PublishOutcome;
 import com.shortbridge.publish.publisher.PublishContext;
+import com.shortbridge.publish.publisher.PublisherHttp;
 import com.shortbridge.publish.publisher.SocialPublisher;
 import com.shortbridge.support.security.token.PlatformTokenCipher;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,9 +34,7 @@ public class TikTokPublisher implements SocialPublisher {
 
   private final PlatformTokenCipher tokenCipher;
   private final StorageClient storageClient;
-  private final ObjectMapper mapper = new ObjectMapper();
-  private final HttpClient httpClient =
-      HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).build();
+  private final PublisherHttp http;
 
   @Override
   public Platform platform() {
@@ -62,7 +56,7 @@ public class TikTokPublisher implements SocialPublisher {
       return PublishOutcome.reconnectRequired("access token empty");
     }
 
-    JsonNode creatorInfo = creatorInfo(accessToken);
+    JsonNode creatorInfo = http.postEmpty(CREATOR_INFO_URL, accessToken, "tiktok creator_info");
     if (creatorInfo == null) {
       return PublishOutcome.failedTemporary(
           "TT_CREATOR_INFO_FAIL", "creator_info query failed", Instant.now().plusSeconds(60));
@@ -72,7 +66,8 @@ public class TikTokPublisher implements SocialPublisher {
     long chunkSize = Math.min(CHUNK_SIZE, fileSize);
     int totalChunks = (int) Math.ceil((double) fileSize / chunkSize);
 
-    JsonNode initResult = initFileUpload(accessToken, context, video, fileSize, chunkSize, totalChunks);
+    JsonNode initResult =
+        http.postJson(INIT_URL, accessToken, buildInitBody(context, video, fileSize, chunkSize, totalChunks), "tiktok video/init");
     if (initResult == null) {
       return PublishOutcome.failedTemporary(
           "TT_INIT_FAIL", "video/init failed", Instant.now().plusSeconds(60));
@@ -94,38 +89,12 @@ public class TikTokPublisher implements SocialPublisher {
     return PublishOutcome.success(externalPostId == null ? publishId : externalPostId, publishId, statusJson == null ? null : statusJson.toString());
   }
 
-  private JsonNode creatorInfo(String accessToken) {
-    HttpRequest request =
-        HttpRequest.newBuilder(URI.create(CREATOR_INFO_URL))
-            .header("Authorization", "Bearer " + accessToken)
-            .header("Content-Type", "application/json; charset=UTF-8")
-            .POST(HttpRequest.BodyPublishers.noBody())
-            .build();
-    try {
-      HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-      if (response.statusCode() / 100 != 2) {
-        log.warn("tiktok creator_info failed: status={} body={}", response.statusCode(), response.body());
-        return null;
-      }
-      return mapper.readTree(response.body());
-    } catch (IOException | InterruptedException e) {
-      Thread.currentThread().interrupt();
-      log.error("tiktok creator_info IO error", e);
-      return null;
-    }
-  }
-
-  private JsonNode initFileUpload(
-      String accessToken,
-      PublishContext context,
-      Video video,
-      long fileSize,
-      long chunkSize,
-      int totalChunks) {
+  private Map<String, Object> buildInitBody(
+      PublishContext context, Video video, long fileSize, long chunkSize, int totalChunks) {
     Map<String, Object> postInfo = new HashMap<>();
     String title = context.target().getPlatformTitle();
     if (title == null || title.isBlank()) title = video.getOriginalFileName();
-    postInfo.put("title", limit(title, 150));
+    postInfo.put("title", PublisherHttp.limit(title, 150));
     postInfo.put("privacy_level", "SELF_ONLY");
     postInfo.put("disable_duet", false);
     postInfo.put("disable_comment", false);
@@ -140,26 +109,7 @@ public class TikTokPublisher implements SocialPublisher {
     Map<String, Object> body = new HashMap<>();
     body.put("post_info", postInfo);
     body.put("source_info", sourceInfo);
-
-    try {
-      String json = mapper.writeValueAsString(body);
-      HttpRequest request =
-          HttpRequest.newBuilder(URI.create(INIT_URL))
-              .header("Authorization", "Bearer " + accessToken)
-              .header("Content-Type", "application/json; charset=UTF-8")
-              .POST(HttpRequest.BodyPublishers.ofString(json))
-              .build();
-      HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-      if (response.statusCode() / 100 != 2) {
-        log.warn("tiktok video/init failed: status={} body={}", response.statusCode(), response.body());
-        return null;
-      }
-      return mapper.readTree(response.body());
-    } catch (IOException | InterruptedException e) {
-      Thread.currentThread().interrupt();
-      log.error("tiktok video/init IO error", e);
-      return null;
-    }
+    return body;
   }
 
   private PublishOutcome uploadChunks(
@@ -174,13 +124,11 @@ public class TikTokPublisher implements SocialPublisher {
         System.arraycopy(all, (int) start, chunk, 0, len);
 
         HttpRequest request =
-            HttpRequest.newBuilder(URI.create(uploadUrl))
-                .timeout(Duration.ofMinutes(5))
-                .header("Content-Type", "video/mp4")
+            http.uploadBuilder(uploadUrl, "video/mp4")
                 .header("Content-Range", "bytes " + start + "-" + end + "/" + fileSize)
                 .PUT(HttpRequest.BodyPublishers.ofByteArray(chunk))
                 .build();
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = http.send(request);
         if (response.statusCode() != 201 && response.statusCode() != 206) {
           log.warn(
               "tiktok chunk upload failed: chunk={} status={} body={}",
@@ -193,7 +141,7 @@ public class TikTokPublisher implements SocialPublisher {
       }
       return null;
     } catch (IOException | InterruptedException e) {
-      Thread.currentThread().interrupt();
+      if (e instanceof InterruptedException) Thread.currentThread().interrupt();
       log.error("tiktok chunk upload IO error", e);
       return PublishOutcome.failedTemporary(
           "TT_UPLOAD_IO", e.getMessage(), Instant.now().plusSeconds(60));
@@ -203,36 +151,19 @@ public class TikTokPublisher implements SocialPublisher {
   private JsonNode pollStatus(String accessToken, String publishId) {
     Map<String, Object> body = Map.of("publish_id", publishId);
     for (int i = 0; i < 12; i++) {
+      JsonNode root = http.postJson(STATUS_URL, accessToken, body, "tiktok status/fetch");
+      if (root == null) return null;
+      String status = root.path("data").path("status").asText("");
+      if ("PUBLISH_COMPLETE".equals(status) || "FAILED".equals(status)) {
+        return root;
+      }
       try {
-        String json = mapper.writeValueAsString(body);
-        HttpRequest request =
-            HttpRequest.newBuilder(URI.create(STATUS_URL))
-                .header("Authorization", "Bearer " + accessToken)
-                .header("Content-Type", "application/json; charset=UTF-8")
-                .POST(HttpRequest.BodyPublishers.ofString(json))
-                .build();
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() / 100 != 2) {
-          log.warn("tiktok status fetch failed: status={} body={}", response.statusCode(), response.body());
-          return null;
-        }
-        JsonNode root = mapper.readTree(response.body());
-        String status = root.path("data").path("status").asText("");
-        if ("PUBLISH_COMPLETE".equals(status) || "FAILED".equals(status)) {
-          return root;
-        }
         Thread.sleep(5000);
-      } catch (IOException | InterruptedException e) {
+      } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
-        log.error("tiktok status fetch IO error", e);
         return null;
       }
     }
     return null;
-  }
-
-  private static String limit(String s, int max) {
-    if (s == null) return null;
-    return s.length() <= max ? s : s.substring(0, max);
   }
 }
