@@ -16,6 +16,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(
@@ -68,6 +70,7 @@ public class SocialAccount extends BaseEntity {
   @Column(nullable = false, length = 30)
   private SocialAccountStatus status;
 
+  @JdbcTypeCode(SqlTypes.JSON)
   @Column(name = "raw_profile_json", columnDefinition = "jsonb")
   private String rawProfileJson;
 
