@@ -107,7 +107,8 @@
           <i class="bi bi-plus-lg"></i> 첫 게시물 만들기
         </a>
       </div>
-      <table th:unless="${#lists.isEmpty(posts)}" class="table table-hover mb-0">
+      <div th:unless="${#lists.isEmpty(posts)}" class="table-responsive">
+      <table class="table table-hover mb-0">
         <thead>
           <tr>
             <th>제목</th><th>모드</th><th>상태</th><th>플랫폼</th><th>생성</th>
@@ -131,6 +132,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
   </div>
 </section>

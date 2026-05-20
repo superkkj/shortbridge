@@ -87,7 +87,8 @@
         <div class="text-muted small mt-1">위 카드에서 플랫폼을 선택해 연결하세요</div>
       </div>
 
-      <table th:unless="${#lists.isEmpty(socialAccounts)}" class="table mb-0">
+      <div th:unless="${#lists.isEmpty(socialAccounts)}" class="table-responsive">
+      <table class="table mb-0">
         <thead>
           <tr>
             <th>플랫폼</th><th>표시 이름</th><th>상태</th><th>토큰 만료</th><th></th>
@@ -116,6 +117,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
   </div>
 </section>
