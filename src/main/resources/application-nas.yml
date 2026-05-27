@@ -1,0 +1,95 @@
+spring:
+  datasource:
+    url: jdbc:mariadb://${NAS_DB_HOST:localhost}:${NAS_DB_PORT:3306}/shortbridge?useUnicode=true&characterEncoding=utf8mb4
+    username: ${NAS_DB_USER:shortbridge}
+    password: ${NAS_DB_PASSWORD:shortbridge}
+    driver-class-name: org.mariadb.jdbc.Driver
+    hikari:
+      maximum-pool-size: 3
+      minimum-idle: 1
+      connection-timeout: 30000
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.MariaDBDialect
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/mariadb
+  rabbitmq:
+    addresses: ${RABBITMQ_URL}
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - openid
+              - email
+              - profile
+            redirect-uri: "${BASE_URL:http://dunblack.synology.me:8080}/login/oauth2/code/{registrationId}"
+
+server:
+  port: ${PORT:8080}
+  forward-headers-strategy: framework
+  error:
+    include-message: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+shortbridge:
+  connect:
+    base-url: ${BASE_URL:http://dunblack.synology.me:8080}
+    youtube:
+      client-id: ${YOUTUBE_CLIENT_ID:not-set}
+      client-secret: ${YOUTUBE_CLIENT_SECRET:not-set}
+    tiktok:
+      client-id: ${TIKTOK_CLIENT_KEY:not-set}
+      client-secret: ${TIKTOK_CLIENT_SECRET:not-set}
+      redirect-uri: ${TIKTOK_REDIRECT_URI:${BASE_URL:http://dunblack.synology.me:8080}/connect/tiktok/callback}
+    instagram:
+      client-id: ${INSTAGRAM_CLIENT_ID:not-set}
+      client-secret: ${INSTAGRAM_CLIENT_SECRET:not-set}
+  storage:
+    type: local
+    local:
+      base-dir: ${STORAGE_LOCAL_BASE:/volume1/shortbridge/storage}
+      public-base-url: ${STORAGE_LOCAL_PUBLIC_URL:${BASE_URL:http://dunblack.synology.me:8080}/files}
+  security:
+    token-cipher:
+      keys:
+        v1: ${TOKEN_KEY_V1}
+      active-key-version: v1
+  publish:
+    scheduler:
+      fixed-delay-ms: 10000
+      batch-size: 20
+    feature-flags:
+      youtube-enabled: ${YOUTUBE_ENABLED:false}
+      instagram-enabled: ${INSTAGRAM_ENABLED:false}
+      tiktok-enabled: ${TIKTOK_ENABLED:false}
+  oauth:
+    success-redirect-url: /dashboard
+
+logging:
+  level:
+    root: INFO
+    com.shortbridge: INFO
+    org.springframework.security: WARN
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN
