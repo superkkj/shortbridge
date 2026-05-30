@@ -1,6 +1,7 @@
 package com.shortbridge.platform.socialaccount.service;
 
 import com.shortbridge.platform.socialaccount.domain.SocialAccount;
+import com.shortbridge.platform.socialaccount.domain.SocialAccountStatus;
 import com.shortbridge.platform.socialaccount.dto.response.SocialAccountResponse;
 import java.util.List;
 import java.util.UUID;
@@ -17,7 +18,18 @@ public class SocialAccountFacade {
 
   @Transactional(readOnly = true)
   public List<SocialAccountResponse> list(UUID userId) {
-    return queryService.list(userId).stream().map(SocialAccountResponse::from).toList();
+    return queryService.list(userId).stream()
+        .filter(account -> account.getStatus() != SocialAccountStatus.DISCONNECTED)
+        .map(SocialAccountResponse::from)
+        .toList();
+  }
+
+  @Transactional(readOnly = true)
+  public List<SocialAccountResponse> listConnected(UUID userId) {
+    return queryService.list(userId).stream()
+        .filter(account -> account.getStatus() == SocialAccountStatus.CONNECTED)
+        .map(SocialAccountResponse::from)
+        .toList();
   }
 
   @Transactional(readOnly = true)

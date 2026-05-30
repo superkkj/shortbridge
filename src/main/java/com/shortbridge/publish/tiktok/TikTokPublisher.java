@@ -56,22 +56,25 @@ public class TikTokPublisher implements SocialPublisher {
       return PublishOutcome.reconnectRequired("access token empty");
     }
 
-    JsonNode creatorInfo = http.postEmpty(CREATOR_INFO_URL, accessToken, "tiktok creator_info");
-    if (creatorInfo == null) {
-      return PublishOutcome.failedTemporary(
-          "TT_CREATOR_INFO_FAIL", "creator_info query failed", Instant.now().plusSeconds(60));
+    TikTokApiResult creatorInfo = postEmpty(CREATOR_INFO_URL, accessToken, "tiktok creator_info");
+    if (!creatorInfo.success()) {
+      return mapApiFailure(creatorInfo, "TT_CREATOR_INFO_FAIL", "creator_info query failed");
     }
 
     long fileSize = video.getFileSize();
     long chunkSize = Math.min(CHUNK_SIZE, fileSize);
     int totalChunks = (int) Math.ceil((double) fileSize / chunkSize);
 
-    JsonNode initResult =
-        http.postJson(INIT_URL, accessToken, buildInitBody(context, video, fileSize, chunkSize, totalChunks), "tiktok video/init");
-    if (initResult == null) {
-      return PublishOutcome.failedTemporary(
-          "TT_INIT_FAIL", "video/init failed", Instant.now().plusSeconds(60));
+    TikTokApiResult initResponse =
+        postJson(
+            INIT_URL,
+            accessToken,
+            buildInitBody(context, video, fileSize, chunkSize, totalChunks),
+            "tiktok video/init");
+    if (!initResponse.success()) {
+      return mapApiFailure(initResponse, "TT_INIT_FAIL", "video/init failed");
     }
+    JsonNode initResult = initResponse.body();
     String publishId = initResult.path("data").path("publish_id").asText(null);
     String uploadUrl = initResult.path("data").path("upload_url").asText(null);
     if (publishId == null || uploadUrl == null) {
@@ -146,6 +149,52 @@ public class TikTokPublisher implements SocialPublisher {
     }
   }
 
+  private TikTokApiResult postEmpty(String url, String accessToken, String opName) {
+    HttpRequest request = http.jsonBearer(url, accessToken).POST(HttpRequest.BodyPublishers.noBody()).build();
+    return executeForJson(request, opName);
+  }
+
+  private TikTokApiResult postJson(String url, String accessToken, Object body, String opName) {
+    try {
+      String json = http.writeJson(body);
+      HttpRequest request =
+          http.jsonBearer(url, accessToken).POST(HttpRequest.BodyPublishers.ofString(json)).build();
+      return executeForJson(request, opName);
+    } catch (IOException e) {
+      log.warn("{} request serialization failed", opName, e);
+      return TikTokApiResult.ioError(e.getMessage());
+    }
+  }
+
+  private TikTokApiResult executeForJson(HttpRequest request, String opName) {
+    try {
+      HttpResponse<String> response = http.send(request);
+      if (response.statusCode() / 100 != 2) {
+        log.warn("{} failed: status={} body={}", opName, response.statusCode(), response.body());
+        return TikTokApiResult.httpError(response.statusCode(), response.body());
+      }
+      return TikTokApiResult.success(http.parse(response.body()));
+    } catch (IOException | InterruptedException e) {
+      if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+      log.warn("{} IO error", opName, e);
+      return TikTokApiResult.ioError(e.getMessage());
+    }
+  }
+
+  private PublishOutcome mapApiFailure(TikTokApiResult result, String code, String message) {
+    if (result.statusCode() == 401) {
+      return PublishOutcome.reconnectRequired("tiktok auth failed: status=" + result.statusCode());
+    }
+    if (result.statusCode() == 403) {
+      return PublishOutcome.blockedByCapability(
+          "tiktok permission/capability blocked: status=403 body=" + result.responseBody());
+    }
+    if (result.statusCode() == 429) {
+      return PublishOutcome.blockedByQuota(Instant.now().plusSeconds(900));
+    }
+    return PublishOutcome.failedTemporary(code, message, Instant.now().plusSeconds(60));
+  }
+
   private static byte[] readExactly(InputStream is, int len) throws IOException {
     byte[] buf = new byte[len];
     int off = 0;
@@ -176,5 +225,19 @@ public class TikTokPublisher implements SocialPublisher {
       }
     }
     return null;
+  }
+
+  private record TikTokApiResult(boolean success, int statusCode, String responseBody, JsonNode body) {
+    static TikTokApiResult success(JsonNode body) {
+      return new TikTokApiResult(true, 200, null, body);
+    }
+
+    static TikTokApiResult httpError(int statusCode, String responseBody) {
+      return new TikTokApiResult(false, statusCode, responseBody, null);
+    }
+
+    static TikTokApiResult ioError(String message) {
+      return new TikTokApiResult(false, 0, message, null);
+    }
   }
 }

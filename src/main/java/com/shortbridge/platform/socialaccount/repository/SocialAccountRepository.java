@@ -22,6 +22,9 @@ public interface SocialAccountRepository extends JpaRepository<SocialAccount, UU
   Optional<SocialAccount> findByUserIdAndPlatformAndStatus(
       UUID userId, Platform platform, SocialAccountStatus status);
 
+  Optional<SocialAccount> findByUserIdAndPlatformAndPlatformUserId(
+      UUID userId, Platform platform, String platformUserId);
+
   @Query(
       "SELECT sa FROM SocialAccount sa WHERE sa.userId = :userId AND sa.id IN :ids")
   List<SocialAccount> findAllByUserIdAndIds(@Param("userId") UUID userId, @Param("ids") Collection<UUID> ids);

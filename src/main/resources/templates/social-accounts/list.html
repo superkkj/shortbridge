@@ -66,6 +66,10 @@
               <i class="bi bi-box-arrow-up-right"></i> 내 잔여 한도 확인 (TikTok Developers)
             </a>
           </div>
+          <div class="alert alert-danger small py-2 mb-3" th:if="${tiktokCapabilityBlocked}">
+            <i class="bi bi-shield-exclamation"></i>
+            현재 연결된 TikTok 계정은 TikTok 정책상 발행이 차단되어 있습니다. 계정을 비공개로 바꾼 뒤 연결 해제하고 다시 연결하세요.
+          </div>
           <a class="btn btn-outline-dark btn-sm" th:href="@{/connect/tiktok}">
             <i class="bi bi-link-45deg"></i> TikTok 연결
           </a>
@@ -85,17 +89,28 @@
             <li><strong>영상 권장:</strong> 15초~90초 · 세로 9:16 비율</li>
             <li><strong>하루 발행 한도:</strong> 24시간당 <strong>50건</strong> (피드/릴스/스토리 합산, Meta Graph API)</li>
           </ul>
-          <div class="alert alert-info small py-2 mb-3">
-            <i class="bi bi-clock-history"></i>
-            현재 ShortBridge 는 Meta 의 앱 심사 대기 중입니다. 심사 통과 후 사용 가능합니다.
+          <div class="alert alert-info small py-2 mb-3" th:if="${instagramConfigured}">
+            <i class="bi bi-info-circle"></i>
+            Meta 앱과 Facebook 페이지 연결이 완료된 계정으로 연결하세요.
+          </div>
+          <div class="alert alert-warning small py-2 mb-3" th:unless="${instagramConfigured}">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            Meta 앱 ID/Secret 설정이 필요합니다. 설정 전에는 Instagram 연결을 시작할 수 없습니다.
+            <div class="mt-2">
+              <span class="text-muted">Meta 앱 OAuth 리디렉션 URI:</span>
+              <code th:text="${instagramRedirectUri}">http://localhost:8080/connect/instagram/callback</code>
+            </div>
           </div>
           <div class="small mb-3">
             <a href="https://developers.facebook.com/apps" target="_blank" rel="noopener" class="text-decoration-none">
               <i class="bi bi-box-arrow-up-right"></i> 내 잔여 한도 확인 (Meta Developers)
             </a>
           </div>
-          <button class="btn btn-outline-secondary btn-sm" disabled>
-            <i class="bi bi-clock-history"></i> Instagram 심사 대기 중
+          <a class="btn btn-outline-secondary btn-sm" th:if="${instagramConfigured}" th:href="@{/connect/instagram}">
+            <i class="bi bi-link-45deg"></i> Instagram 연결
+          </a>
+          <button class="btn btn-outline-secondary btn-sm" type="button" disabled th:unless="${instagramConfigured}">
+            <i class="bi bi-lock"></i> Instagram 설정 필요
           </button>
         </div>
       </div>

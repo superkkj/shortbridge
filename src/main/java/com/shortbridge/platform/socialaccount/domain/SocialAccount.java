@@ -121,12 +121,32 @@ public class SocialAccount extends BaseEntity {
     this.status = SocialAccountStatus.CONNECTED;
   }
 
+  public void updateConnection(
+      String platformUserId,
+      String displayName,
+      String accessTokenEncrypted,
+      String refreshTokenEncrypted,
+      String tokenKeyVersion,
+      Instant tokenExpiresAt,
+      String scopes,
+      String rawProfileJson) {
+    this.platformUserId = platformUserId;
+    this.displayName = displayName;
+    this.scopes = scopes;
+    this.rawProfileJson = rawProfileJson;
+    updateToken(accessTokenEncrypted, refreshTokenEncrypted, tokenKeyVersion, tokenExpiresAt);
+  }
+
   public void markTokenExpired() {
     this.status = SocialAccountStatus.TOKEN_EXPIRED;
   }
 
   public void markReconnectRequired() {
     this.status = SocialAccountStatus.RECONNECT_REQUIRED;
+  }
+
+  public void markCapabilityBlocked() {
+    this.status = SocialAccountStatus.CAPABILITY_BLOCKED;
   }
 
   public void disconnect() {

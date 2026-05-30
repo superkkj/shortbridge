@@ -35,7 +35,7 @@ public class ScheduledPublishEnqueuer {
     }
     List<PostTarget> retries = postTargetQueryService.findDueRetry(now);
     for (PostTarget target : retries) {
-      if (postTargetCommandService.tryMarkQueuedFromReady(target.getId())) {
+      if (postTargetCommandService.tryMarkQueuedFromRetryWait(target.getId())) {
         publishGateway.enqueue(
             EnqueueRequest.of(target.getId(), target.getPostId(), target.getUserId(), target.getPlatform()));
       }

@@ -18,9 +18,9 @@ public enum PostStatus {
    *
    * <ul>
    *   <li>아직 terminal 이 아닌 target 이 하나라도 있으면 {@code PROCESSING}</li>
-   *   <li>전부 terminal + PUBLISHED + FAILED_PERMANENT 가 섞여 있으면 {@code PARTIAL_FAILED}</li>
-   *   <li>전부 terminal + PUBLISHED 가 하나라도 있으면 {@code PUBLISHED}</li>
-   *   <li>전부 terminal + PUBLISHED 가 없으면 {@code FAILED}</li>
+   *   <li>전부 terminal + 성공/실패가 섞여 있으면 {@code PARTIAL_FAILED}</li>
+   *   <li>전부 terminal + 성공만 있으면 {@code PUBLISHED}</li>
+   *   <li>전부 terminal + 성공이 없으면 {@code FAILED}</li>
    * </ul>
    *
    * 빈 입력은 status 갱신 자체를 하지 않는다는 의미로 {@link Optional#empty()} 반환.
@@ -33,10 +33,20 @@ public enum PostStatus {
     if (!allTerminal) {
       return Optional.of(PROCESSING);
     }
-    boolean anySuccess = targetStatuses.stream().anyMatch(s -> s == PostTargetStatus.PUBLISHED);
-    boolean anyFail = targetStatuses.stream().anyMatch(s -> s == PostTargetStatus.FAILED_PERMANENT);
+    boolean anySuccess = targetStatuses.stream().anyMatch(PostStatus::isSuccess);
+    boolean anyFail = targetStatuses.stream().anyMatch(PostStatus::isFailure);
     if (anySuccess && anyFail) return Optional.of(PARTIAL_FAILED);
     if (anySuccess) return Optional.of(PUBLISHED);
     return Optional.of(FAILED);
+  }
+
+  private static boolean isSuccess(PostTargetStatus status) {
+    return status == PostTargetStatus.PUBLISHED || status == PostTargetStatus.PRIVATE_LIMITED;
+  }
+
+  private static boolean isFailure(PostTargetStatus status) {
+    return status == PostTargetStatus.FAILED_PERMANENT
+        || status == PostTargetStatus.BLOCKED_BY_CAPABILITY
+        || status == PostTargetStatus.RECONNECT_REQUIRED;
   }
 }

@@ -1,0 +1,76 @@
+name: NAS JAR Deploy
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  NAS_SSH_PORT: ${{ secrets.NAS_SSH_PORT || '22' }}
+  NAS_DEPLOY_PATH: ${{ secrets.NAS_DEPLOY_PATH || '/volume1/shortbridge' }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10'
+      - run: gradle test --no-daemon
+
+  deploy:
+    runs-on: ${{ vars.NAS_RUNNER_LABEL || 'ubuntu-latest' }}
+    needs: test
+    if: github.event_name == 'workflow_dispatch' || vars.NAS_AUTO_DEPLOY == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10'
+      - run: gradle bootJar --no-daemon
+
+      - name: Prepare SSH
+        run: |
+          test -n "${NAS_SSH_HOST}"
+          test -n "${NAS_SSH_USER}"
+          test -n "${NAS_SSH_KEY}"
+          mkdir -p ~/.ssh
+          printf '%s\n' "${NAS_SSH_KEY}" > ~/.ssh/nas_key
+          chmod 600 ~/.ssh/nas_key
+          ssh-keyscan -p "${NAS_SSH_PORT}" "${NAS_SSH_HOST}" >> ~/.ssh/known_hosts
+        env:
+          NAS_SSH_HOST: ${{ secrets.NAS_SSH_HOST }}
+          NAS_SSH_USER: ${{ secrets.NAS_SSH_USER }}
+          NAS_SSH_KEY: ${{ secrets.NAS_SSH_KEY }}
+
+      - name: Upload JAR
+        run: |
+          JAR="$(ls build/libs/*.jar | head -1)"
+          ssh -i ~/.ssh/nas_key -p "${NAS_SSH_PORT}" "${NAS_SSH_USER}@${NAS_SSH_HOST}" \
+            "mkdir -p '${NAS_DEPLOY_PATH}/logs' '${NAS_DEPLOY_PATH}/storage'"
+          scp -O -i ~/.ssh/nas_key -P "${NAS_SSH_PORT}" "${JAR}" \
+            "${NAS_SSH_USER}@${NAS_SSH_HOST}:${NAS_DEPLOY_PATH}/app.jar.next"
+        env:
+          NAS_SSH_HOST: ${{ secrets.NAS_SSH_HOST }}
+          NAS_SSH_USER: ${{ secrets.NAS_SSH_USER }}
+
+      - name: Restart ShortBridge
+        run: |
+          ssh -i ~/.ssh/nas_key -p "${NAS_SSH_PORT}" "${NAS_SSH_USER}@${NAS_SSH_HOST}" \
+            "set -e; mv '${NAS_DEPLOY_PATH}/app.jar.next' '${NAS_DEPLOY_PATH}/app.jar'; '${NAS_DEPLOY_PATH}/start.sh'; sleep 5; curl -fsS http://127.0.0.1:8080/actuator/health"
+        env:
+          NAS_SSH_HOST: ${{ secrets.NAS_SSH_HOST }}
+          NAS_SSH_USER: ${{ secrets.NAS_SSH_USER }}

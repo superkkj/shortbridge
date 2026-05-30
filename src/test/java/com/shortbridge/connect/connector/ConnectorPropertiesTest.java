@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 class ConnectorPropertiesTest {
 
   private static ConnectorProperties.Provider provider(String redirect) {
-    return new ConnectorProperties.Provider("client-id", "client-secret", redirect);
+    return new ConnectorProperties.Provider("client-id", "client-secret", redirect, null, null);
   }
 
   @Test

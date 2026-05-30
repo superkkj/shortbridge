@@ -30,14 +30,27 @@ public class SocialAccountCommandService {
       String rawProfileJson) {
     SocialAccount existing =
         socialAccountRepository
-            .findByUserIdAndPlatformAndStatus(userId, platform, com.shortbridge.platform.socialaccount.domain.SocialAccountStatus.CONNECTED)
+            .findByUserIdAndPlatformAndPlatformUserId(userId, platform, platformUserId)
+            .or(() ->
+                socialAccountRepository.findByUserIdAndPlatformAndStatus(
+                    userId,
+                    platform,
+                    com.shortbridge.platform.socialaccount.domain.SocialAccountStatus.CONNECTED))
             .orElse(null);
 
     String encAccess = tokenCipher.encrypt(accessToken);
     String encRefresh = tokenCipher.encrypt(refreshToken);
 
     if (existing != null) {
-      existing.updateToken(encAccess, encRefresh, tokenCipher.activeVersion(), expiresAt);
+      existing.updateConnection(
+          platformUserId,
+          displayName,
+          encAccess,
+          encRefresh,
+          tokenCipher.activeVersion(),
+          expiresAt,
+          scopes,
+          rawProfileJson);
       return existing;
     }
 

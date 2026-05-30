@@ -35,6 +35,15 @@ ShortBridge는 그걸 **한 번만** 하면 알아서 4곳에 다 올려줘요.
 
 ---
 
+## 🚀 NAS 배포 상태
+
+- 현재 NAS URL: `http://192.168.31.2:8080`
+- `master` push 자동 배포: 활성화됨. 이 Mac의 LaunchAgent가 `origin/master`를 60초마다 확인해서 NAS로 배포합니다.
+- NAS 실행 방식: DS118은 Docker가 안 되므로 JAR blue-green입니다. nginx가 8080을 받고 Java 앱은 blue `18080` / green `18081` 중 하나에서 실행됩니다.
+- 자세한 문서: `docs/deployment/NAS_MASTER_PUSH_AUTODEPLOY.md`, `docs/deployment/NAS_CURRENT_RUNTIME.md`
+
+---
+
 ## 🚦 처음 시작하기 (5분 가이드)
 
 ### 0. 미리 준비할 거
@@ -279,3 +288,8 @@ gradle build -x test
 - **Auto-deploy**: master branch push 시 자동 재배포
 - **DB**: Neon PostgreSQL 17 (Singapore)
 - **Queue**: CloudAMQP Little Lemur (Singapore)
+
+### NAS Blue-Green
+
+Synology NAS 배포 구성은 `docs/deployment/NAS_BLUE_GREEN_CICD.md` 를 기준으로 진행한다.
+GitHub Actions가 GHCR 이미지를 빌드하고 NAS에서 `shortbridge-nas-blue/green` 컨테이너를 Traefik으로 무중단 전환한다.

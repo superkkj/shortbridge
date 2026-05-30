@@ -72,7 +72,7 @@ public class PublishProcessor {
           target.getId(),
           target.getPlatform(),
           outcome.resultType());
-      applyOutcome(target, job, outcome);
+      applyOutcome(target, job, account, outcome);
     } catch (RuntimeException e) {
       log.error("publish worker failed: target={}", target.getId(), e);
       target.markFailedTemporary("WORKER_ERROR", e.getMessage(), null);
@@ -83,7 +83,7 @@ public class PublishProcessor {
     updatePostStatusAfterTarget(target);
   }
 
-  private void applyOutcome(PostTarget target, PublishJob job, PublishOutcome outcome) {
+  private void applyOutcome(PostTarget target, PublishJob job, SocialAccount account, PublishOutcome outcome) {
     switch (outcome.resultType()) {
       case SUCCESS -> {
         target.markPublished(outcome.externalPostId());
@@ -101,6 +101,7 @@ public class PublishProcessor {
       }
       case RECONNECT_REQUIRED -> {
         target.markReconnectRequired(outcome.errorMessage());
+        account.markReconnectRequired();
         job.markFailed(outcome.errorCode(), outcome.errorMessage());
       }
       case BLOCKED_BY_QUOTA -> {
@@ -110,6 +111,7 @@ public class PublishProcessor {
       }
       case BLOCKED_BY_CAPABILITY -> {
         target.markBlockedByCapability(outcome.errorMessage());
+        account.markCapabilityBlocked();
         job.markFailed(outcome.errorCode(), outcome.errorMessage());
       }
       case PRIVATE_LIMITED -> {

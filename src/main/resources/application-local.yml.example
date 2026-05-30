@@ -67,5 +67,17 @@ spring:
             user-name-attribute: open_id
 
 shortbridge:
+  connect:
+    base-url: http://localhost:8080
+    instagram:
+      client-id: ${INSTAGRAM_CLIENT_ID:REPLACE_ME}
+      client-secret: ${INSTAGRAM_CLIENT_SECRET:REPLACE_ME}
+      redirect-uri: ${INSTAGRAM_REDIRECT_URI:http://localhost:8080/connect/instagram/callback}
+      api-base-url: ${INSTAGRAM_API_BASE_URL:https://graph.facebook.com/v23.0}
+      scopes:
+        - pages_show_list
+        - pages_read_engagement
+        - instagram_basic
+        - instagram_content_publish
   storage:
     type: local

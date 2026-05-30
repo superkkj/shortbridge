@@ -22,6 +22,8 @@ class PostStatusTest {
         .contains(PostStatus.PROCESSING);
     assertThat(PostStatus.recomputeFrom(List.of(PostTargetStatus.PUBLISHED, PostTargetStatus.QUEUED)))
         .contains(PostStatus.PROCESSING);
+    assertThat(PostStatus.recomputeFrom(List.of(PostTargetStatus.PUBLISHED, PostTargetStatus.BLOCKED_BY_QUOTA)))
+        .contains(PostStatus.PROCESSING);
     assertThat(
             PostStatus.recomputeFrom(
                 List.of(PostTargetStatus.UPLOADING, PostTargetStatus.FAILED_PERMANENT)))
@@ -34,6 +36,10 @@ class PostStatusTest {
             PostStatus.recomputeFrom(
                 List.of(PostTargetStatus.PUBLISHED, PostTargetStatus.FAILED_PERMANENT)))
         .contains(PostStatus.PARTIAL_FAILED);
+    assertThat(
+            PostStatus.recomputeFrom(
+                List.of(PostTargetStatus.PUBLISHED, PostTargetStatus.RECONNECT_REQUIRED)))
+        .contains(PostStatus.PARTIAL_FAILED);
   }
 
   @Test
@@ -41,6 +47,8 @@ class PostStatusTest {
     assertThat(
             PostStatus.recomputeFrom(
                 List.of(PostTargetStatus.PUBLISHED, PostTargetStatus.PUBLISHED)))
+        .contains(PostStatus.PUBLISHED);
+    assertThat(PostStatus.recomputeFrom(List.of(PostTargetStatus.PRIVATE_LIMITED)))
         .contains(PostStatus.PUBLISHED);
   }
 
@@ -57,6 +65,10 @@ class PostStatusTest {
     assertThat(
             PostStatus.recomputeFrom(
                 List.of(PostTargetStatus.FAILED_PERMANENT, PostTargetStatus.CANCELED)))
+        .contains(PostStatus.FAILED);
+    assertThat(
+            PostStatus.recomputeFrom(
+                List.of(PostTargetStatus.RECONNECT_REQUIRED, PostTargetStatus.BLOCKED_BY_CAPABILITY)))
         .contains(PostStatus.FAILED);
     assertThat(PostStatus.recomputeFrom(List.of(PostTargetStatus.CANCELED)))
         .contains(PostStatus.FAILED);

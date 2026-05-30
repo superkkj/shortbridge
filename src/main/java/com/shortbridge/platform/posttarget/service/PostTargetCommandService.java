@@ -33,7 +33,15 @@ public class PostTargetCommandService {
 
   @Transactional
   public boolean tryMarkQueuedFromReady(UUID postTargetId) {
-    int updated = postTargetRepository.markQueuedConditional(postTargetId, Instant.now());
+    int updated =
+        postTargetRepository.markQueuedConditional(postTargetId, Instant.now(), List.of(PostTargetStatus.READY));
+    return updated > 0;
+  }
+
+  @Transactional
+  public boolean tryMarkQueuedFromRetryWait(UUID postTargetId) {
+    int updated =
+        postTargetRepository.markQueuedConditional(postTargetId, Instant.now(), List.of(PostTargetStatus.RETRY_WAIT));
     return updated > 0;
   }
 }

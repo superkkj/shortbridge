@@ -67,6 +67,13 @@ shortbridge:
     instagram:
       client-id: ${INSTAGRAM_CLIENT_ID:not-set-yet}
       client-secret: ${INSTAGRAM_CLIENT_SECRET:not-set-yet}
+      redirect-uri: ${INSTAGRAM_REDIRECT_URI:${BASE_URL:https://shortbridge.onrender.com}/connect/instagram/callback}
+      api-base-url: ${INSTAGRAM_API_BASE_URL:https://graph.facebook.com/v23.0}
+      scopes:
+        - pages_show_list
+        - pages_read_engagement
+        - instagram_basic
+        - instagram_content_publish
   storage:
     type: ${STORAGE_TYPE:local}
     local:

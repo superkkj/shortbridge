@@ -66,9 +66,15 @@ public class TikTokConnector implements SocialConnector {
     Integer expiresInSec = ((Number) token.getOrDefault("expires_in", 0)).intValue();
     Instant expiresAt = expiresInSec > 0 ? Instant.now().plusSeconds(expiresInSec) : null;
     String scope = String.valueOf(token.getOrDefault("scope", ""));
-    String openId = String.valueOf(token.getOrDefault("open_id", "self"));
+    String openId = (String) token.get("open_id");
+    if (isBlank(accessToken) || isBlank(openId)) {
+      throw ShortBridgeException.of(ErrorCode.EXTERNAL_PLATFORM_ERROR, "TikTok token response missing access_token/open_id");
+    }
 
     String displayName = fetchDisplayName(accessToken);
+    if (isBlank(displayName)) {
+      displayName = openId;
+    }
 
     String rawJson;
     try {
@@ -108,7 +114,7 @@ public class TikTokConnector implements SocialConnector {
       JsonNode json = mapper.readTree(response.body());
       return mapper.convertValue(json, new TypeReference<Map<String, Object>>() {});
     } catch (IOException | InterruptedException e) {
-      Thread.currentThread().interrupt();
+      if (e instanceof InterruptedException) Thread.currentThread().interrupt();
       throw ShortBridgeException.of(ErrorCode.EXTERNAL_PLATFORM_ERROR, e, "TikTok token exchange IO");
     }
   }
@@ -127,14 +133,13 @@ public class TikTokConnector implements SocialConnector {
             "tiktok user info failed: status={} body={}",
             response.statusCode(),
             SensitiveLog.truncate(response.body()));
-        return null;
+        throw ShortBridgeException.of(ErrorCode.EXTERNAL_PLATFORM_ERROR, "TikTok user info: " + response.statusCode());
       }
       JsonNode root = mapper.readTree(response.body());
       return root.path("data").path("user").path("display_name").asText(null);
     } catch (IOException | InterruptedException e) {
-      Thread.currentThread().interrupt();
-      log.warn("tiktok user info IO error", e);
-      return null;
+      if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+      throw ShortBridgeException.of(ErrorCode.EXTERNAL_PLATFORM_ERROR, e, "TikTok user info IO");
     }
   }
 

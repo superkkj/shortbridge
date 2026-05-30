@@ -36,7 +36,7 @@ public class PostViewController {
   @GetMapping("/new")
   public String createForm(CurrentUser currentUser, Model model) {
     model.addAttribute("videos", videoFacade.list(currentUser.userId()));
-    model.addAttribute("socialAccounts", socialAccountFacade.list(currentUser.userId()));
+    model.addAttribute("socialAccounts", socialAccountFacade.listConnected(currentUser.userId()));
     return "posts/create";
   }
 

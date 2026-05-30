@@ -42,6 +42,9 @@ public interface PostTargetRepository extends JpaRepository<PostTarget, UUID> {
   @Modifying
   @Query(
       "UPDATE PostTarget pt SET pt.status = com.shortbridge.platform.posttarget.domain.PostTargetStatus.QUEUED, "
-          + "pt.queuedAt = :now WHERE pt.id = :id AND pt.status = com.shortbridge.platform.posttarget.domain.PostTargetStatus.READY")
-  int markQueuedConditional(@Param("id") UUID id, @Param("now") Instant now);
+          + "pt.queuedAt = :now WHERE pt.id = :id AND pt.status IN :allowed")
+  int markQueuedConditional(
+      @Param("id") UUID id,
+      @Param("now") Instant now,
+      @Param("allowed") List<PostTargetStatus> allowed);
 }
