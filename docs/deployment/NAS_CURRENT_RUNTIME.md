@@ -36,8 +36,10 @@ Expected:
 - Java runtime: `/usr/local/shortbridge/java/temurin-21-jre`
 - App directory: `/volume1/shortbridge`
 - App JAR: `/volume1/shortbridge/app.jar`
+- Runtime env file: `/volume1/shortbridge/app.env` (NAS-only secrets; do not commit)
 - Public port: `8080`, served by NAS nginx
 - Active app slot: blue `18080` or green `18081`
+- New slot health wait timeout: up to 15 minutes on DS118
 - App logs: `/volume1/shortbridge/logs/app-blue.log`, `/volume1/shortbridge/logs/app-green.log`
 - Nginx logs: `/volume1/shortbridge/logs/nginx-access.log`, `/volume1/shortbridge/logs/nginx-error.log`
 - Start script: `/volume1/shortbridge/start.sh`

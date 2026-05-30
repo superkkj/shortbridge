@@ -3,7 +3,7 @@ set -eu
 
 APP="${SHORTBRIDGE_APP_DIR:-/volume1/shortbridge}"
 JAVA="${SHORTBRIDGE_JAVA:-/usr/local/shortbridge/java/temurin-21-jre/bin/java}"
-JAVA_OPTS="${JAVA_OPTS:--Xms64m -Xmx192m -XX:+UseG1GC}"
+JAVA_OPTS="${JAVA_OPTS:--Xms32m -Xmx128m -XX:+UseG1GC}"
 NGINX="${SHORTBRIDGE_NGINX:-/usr/bin/nginx}"
 PUBLIC_PORT="${PUBLIC_PORT:-8080}"
 BLUE_PORT="${BLUE_PORT:-18080}"
@@ -90,7 +90,7 @@ start_slot() {
 wait_health() {
   port="$1"
   i=0
-  while [ "$i" -lt 180 ]; do
+  while [ "$i" -lt 450 ]; do
     if curl -fsS "http://127.0.0.1:$port/actuator/health" >/dev/null 2>&1; then
       return 0
     fi

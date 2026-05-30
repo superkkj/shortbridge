@@ -60,6 +60,13 @@ fi
 ssh -p "${NAS_PORT}" "${NAS_USER}@${NAS_HOST}" \
   "mkdir -p '${NAS_DEPLOY_PATH}/logs' '${NAS_DEPLOY_PATH}/storage'"
 
+scp -O -P "${NAS_PORT}" "${REPO_DIR}/scripts/nas/start-blue-green.sh" \
+  "${NAS_USER}@${NAS_HOST}:${NAS_DEPLOY_PATH}/start.sh"
+scp -O -P "${NAS_PORT}" "${REPO_DIR}/scripts/nas/stop-blue-green.sh" \
+  "${NAS_USER}@${NAS_HOST}:${NAS_DEPLOY_PATH}/stop.sh"
+ssh -p "${NAS_PORT}" "${NAS_USER}@${NAS_HOST}" \
+  "chmod +x '${NAS_DEPLOY_PATH}/start.sh' '${NAS_DEPLOY_PATH}/stop.sh'"
+
 scp -O -P "${NAS_PORT}" "${jar_path}" \
   "${NAS_USER}@${NAS_HOST}:${NAS_DEPLOY_PATH}/app.jar.next"
 

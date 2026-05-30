@@ -12,6 +12,9 @@ gradle bootJar
 
 JAR="$(ls build/libs/*.jar | head -1)"
 ssh -p "${NAS_PORT}" "${NAS_USER}@${NAS_HOST}" "mkdir -p '${NAS_DEPLOY_PATH}/logs' '${NAS_DEPLOY_PATH}/storage'"
+scp -O -P "${NAS_PORT}" scripts/nas/start-blue-green.sh "${NAS_USER}@${NAS_HOST}:${NAS_DEPLOY_PATH}/start.sh"
+scp -O -P "${NAS_PORT}" scripts/nas/stop-blue-green.sh "${NAS_USER}@${NAS_HOST}:${NAS_DEPLOY_PATH}/stop.sh"
+ssh -p "${NAS_PORT}" "${NAS_USER}@${NAS_HOST}" "chmod +x '${NAS_DEPLOY_PATH}/start.sh' '${NAS_DEPLOY_PATH}/stop.sh'"
 scp -O -P "${NAS_PORT}" "${JAR}" "${NAS_USER}@${NAS_HOST}:${NAS_DEPLOY_PATH}/app.jar.next"
 ssh -p "${NAS_PORT}" "${NAS_USER}@${NAS_HOST}" \
   "set -e; mv '${NAS_DEPLOY_PATH}/app.jar.next' '${NAS_DEPLOY_PATH}/app.jar'; '${NAS_DEPLOY_PATH}/start.sh'; sleep 5; curl -fsS http://127.0.0.1:8080/actuator/health"

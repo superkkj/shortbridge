@@ -114,6 +114,7 @@ If the new slot does not become healthy, nginx is not switched and the old slot 
 NAS:
 
 - `/volume1/shortbridge/app.jar`
+- `/volume1/shortbridge/app.env`
 - `/volume1/shortbridge/start.sh`
 - `/volume1/shortbridge/stop.sh`
 - `/volume1/shortbridge/logs/app-blue.log`
@@ -127,6 +128,8 @@ Mac:
 - `~/Library/Logs/shortbridge-nas-deploy.err.log`
 - `~/.shortbridge-nas-deploy/deployed.sha`
 - `~/.shortbridge-nas-deploy/repo`
+
+`app.env` is intentionally stored only on the NAS. It supplies runtime OAuth/platform credentials without committing secrets to git.
 
 ## Check Commands
 
@@ -156,5 +159,5 @@ scripts/deploy-nas-jar.sh
 - The Mac must stay on and logged in for the LaunchAgent to run.
 - The Mac must be able to SSH to the NAS.
 - DB and RabbitMQ still point to this Mac's Docker containers at `192.168.31.18`.
-- DS118 has limited memory, so starting a new slot can take around 2 minutes.
+- DS118 has limited memory, so starting a new slot can take several minutes. The script waits up to 15 minutes before deciding the new slot failed.
 - GitHub Actions workflows remain in the repo, but the active automatic deployment path is the local LaunchAgent.
