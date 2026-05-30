@@ -7,10 +7,11 @@
 1. `docs/NEXT_SESSION_HANDOFF.md`
 2. `docs/deployment/NAS_CURRENT_RUNTIME.md`
 3. `docs/deployment/NAS_MASTER_PUSH_AUTODEPLOY.md`
-4. `docs/deployment/NAS_AUTODEPLOY_VERIFICATION_2026-05-31.md`
-5. `docs/deployment/NAS_BLUE_GREEN_CICD.md`
-6. `docs/integrations/META_TEST_ACCOUNT_WORKLOG.md` if present locally
-7. `docs/integrations/INSTAGRAM_REELS_SETUP.md` if present locally
+4. `docs/deployment/DUCKDNS_DOMAIN_SETUP.md`
+5. `docs/deployment/NAS_AUTODEPLOY_VERIFICATION_2026-05-31.md`
+6. `docs/deployment/NAS_BLUE_GREEN_CICD.md`
+7. `docs/integrations/META_TEST_ACCOUNT_WORKLOG.md` if present locally
+8. `docs/integrations/INSTAGRAM_REELS_SETUP.md` if present locally
 
 ## Instagram / Meta Current State
 
@@ -66,8 +67,15 @@ That log decides whether the problem is page access, missing IG linkage, or a co
 - DS118 has no Docker/Container Manager and no Java package by default.
 - Temurin JRE 21 ARM64 was installed at `/usr/local/shortbridge/java/temurin-21-jre`.
 - App jar was copied to `/volume1/shortbridge/app.jar`.
-- App is currently running on the NAS at `http://192.168.31.2:8080`.
-- Port `8080` is served by NAS nginx, which proxies to the active Java slot.
+- App is currently running on the NAS at `https://shortbridge.duckdns.org`.
+- LAN fallback is `http://192.168.31.2:8080`.
+- Public `443` is served by Synology nginx, which proxies to ShortBridge nginx on `127.0.0.1:8080`.
+- Port `8080` is served by ShortBridge nginx, which proxies to the active Java slot.
+- DuckDNS domain is `shortbridge.duckdns.org`.
+- DuckDNS token is stored only on the NAS at `/volume1/shortbridge/duckdns/token`; do not commit it.
+- DuckDNS IP update script is `/volume1/shortbridge/duckdns/update.sh` and runs every 5 minutes from `/etc/crontab`.
+- Let's Encrypt DNS-01 cert is installed under `/volume1/shortbridge/certs/duckdns`.
+- Cert renewal helper is `/volume1/shortbridge/certs/renew-duckdns-cert-user.sh` and runs daily from `/etc/crontab`.
 - Current Java slots:
   - blue: `127.0.0.1:18080`
   - green: `127.0.0.1:18081`
@@ -88,5 +96,7 @@ That log decides whether the problem is page access, missing IG linkage, or a co
 - GitHub Actions JAR deploy workflow is present at `.github/workflows/deploy-nas-jar.yml`, but the active path is the local LaunchAgent because GitHub-hosted runners cannot reach the private LAN NAS.
 - Auto deploy was verified with commit `2771bb7b3b37b29c3c92886ea74871cd841c665f`.
 - Browser `/login` was verified with Playwright/Chrome. Page title was `로그인 · ShortBridge`.
-- nginx redirect bug was fixed by preserving `$http_host` and `X-Forwarded-Port`; without this, `/` redirected to `http://192.168.31.2/login` and missed port `8080`.
-- Free domain direction: prefer existing Synology DDNS first, then DuckDNS/FreeDNS. See `docs/deployment/NAS_AUTODEPLOY_VERIFICATION_2026-05-31.md`.
+- nginx redirect bugs fixed:
+  - LAN direct access keeps `:8080`.
+  - Public `https://shortbridge.duckdns.org` keeps `X-Forwarded-Proto=https` and `X-Forwarded-Port=443` through both nginx layers.
+- Domain/cert details are in `docs/deployment/DUCKDNS_DOMAIN_SETUP.md`.

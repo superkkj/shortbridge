@@ -63,6 +63,8 @@ start_slot() {
   slot="$1"
   port="$(slot_port "$slot")"
   log_file="$APP/logs/app-$slot.log"
+  base_url="${BASE_URL:-http://192.168.31.2:${PUBLIC_PORT}}"
+  storage_public_url="${STORAGE_LOCAL_PUBLIC_URL:-${SHORTBRIDGE_STORAGE_LOCAL_PUBLIC_BASE_URL:-${base_url}/files}}"
 
   stop_slot "$slot"
 
@@ -77,9 +79,11 @@ start_slot() {
     SPRING_RABBITMQ_PORT="${SPRING_RABBITMQ_PORT:-5672}" \
     SPRING_RABBITMQ_USERNAME="${SPRING_RABBITMQ_USERNAME:-shortbridge}" \
     SPRING_RABBITMQ_PASSWORD="${SPRING_RABBITMQ_PASSWORD:-shortbridge}" \
-    SHORTBRIDGE_CONNECT_BASE_URL="${SHORTBRIDGE_CONNECT_BASE_URL:-http://192.168.31.2:${PUBLIC_PORT}}" \
+    BASE_URL="$base_url" \
+    SHORTBRIDGE_CONNECT_BASE_URL="${SHORTBRIDGE_CONNECT_BASE_URL:-$base_url}" \
     SHORTBRIDGE_STORAGE_LOCAL_BASE_DIR="${SHORTBRIDGE_STORAGE_LOCAL_BASE_DIR:-$APP/storage}" \
-    SHORTBRIDGE_STORAGE_LOCAL_PUBLIC_BASE_URL="${SHORTBRIDGE_STORAGE_LOCAL_PUBLIC_BASE_URL:-http://192.168.31.2:${PUBLIC_PORT}/files}" \
+    STORAGE_LOCAL_PUBLIC_URL="$storage_public_url" \
+    SHORTBRIDGE_STORAGE_LOCAL_PUBLIC_BASE_URL="$storage_public_url" \
     "$JAVA" $JAVA_OPTS -jar "$APP/app.jar" \
     > "$log_file" 2>&1 &
 
@@ -120,18 +124,33 @@ http {
   uwsgi_temp_path $PROXY_DIR/uwsgi_temp;
   scgi_temp_path $PROXY_DIR/scgi_temp;
 
+  map \$http_x_forwarded_host \$shortbridge_forwarded_host {
+    default \$http_x_forwarded_host;
+    "" \$http_host;
+  }
+
+  map \$http_x_forwarded_proto \$shortbridge_forwarded_proto {
+    default \$http_x_forwarded_proto;
+    "" \$scheme;
+  }
+
+  map \$http_x_forwarded_port \$shortbridge_forwarded_port {
+    default \$http_x_forwarded_port;
+    "" \$server_port;
+  }
+
   server {
     listen $PUBLIC_PORT;
 
     location / {
       proxy_pass http://shortbridge_backend;
       proxy_http_version 1.1;
-      proxy_set_header Host \$http_host;
+      proxy_set_header Host \$shortbridge_forwarded_host;
       proxy_set_header X-Real-IP \$remote_addr;
       proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-      proxy_set_header X-Forwarded-Host \$http_host;
-      proxy_set_header X-Forwarded-Proto \$scheme;
-      proxy_set_header X-Forwarded-Port \$server_port;
+      proxy_set_header X-Forwarded-Host \$shortbridge_forwarded_host;
+      proxy_set_header X-Forwarded-Proto \$shortbridge_forwarded_proto;
+      proxy_set_header X-Forwarded-Port \$shortbridge_forwarded_port;
       proxy_connect_timeout 60s;
       proxy_send_timeout 600s;
       proxy_read_timeout 600s;

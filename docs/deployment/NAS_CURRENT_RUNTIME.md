@@ -10,15 +10,17 @@ When this Mac is powered on, logged in, and on the home network, `origin/master`
 
 The active implementation is documented in `docs/deployment/NAS_MASTER_PUSH_AUTODEPLOY.md`.
 
-## Current Running URL
+## Current Running URLs
 
 ```text
+https://shortbridge.duckdns.org
 http://192.168.31.2:8080
 ```
 
 Browser check:
 
 ```text
+https://shortbridge.duckdns.org/login
 http://192.168.31.2:8080/login
 ```
 
@@ -31,6 +33,7 @@ Expected page title:
 Health check:
 
 ```text
+https://shortbridge.duckdns.org/actuator/health
 http://192.168.31.2:8080/actuator/health
 ```
 
@@ -49,7 +52,11 @@ Expected:
 - App directory: `/volume1/shortbridge`
 - App JAR: `/volume1/shortbridge/app.jar`
 - Runtime env file: `/volume1/shortbridge/app.env` (NAS-only secrets; do not commit)
-- Public port: `8080`, served by NAS nginx
+- Public domain: `https://shortbridge.duckdns.org`
+- Public entry port: `443`, served by Synology nginx and proxied to ShortBridge nginx on `8080`
+- LAN port: `8080`, served by ShortBridge nginx
+- DuckDNS updater: `/volume1/shortbridge/duckdns/update.sh`, scheduled every 5 minutes in `/etc/crontab`
+- Let's Encrypt cert: `/volume1/shortbridge/certs/duckdns/fullchain.pem`
 - Active app slot: blue `18080` or green `18081`
 - New slot health wait timeout: up to 15 minutes on DS118
 - App logs: `/volume1/shortbridge/logs/app-blue.log`, `/volume1/shortbridge/logs/app-green.log`
@@ -57,16 +64,16 @@ Expected:
 - Start script: `/volume1/shortbridge/start.sh`
 - Stop script: `/volume1/shortbridge/stop.sh`
 
-Latest verified deployment:
+Latest deployed SHA is tracked on this Mac at:
 
 ```text
-2771bb7b3b37b29c3c92886ea74871cd841c665f
+~/.shortbridge-nas-deploy/deployed.sha
 ```
 
-Latest verified active slot:
+The active slot changes on each blue-green deploy. Check it on the NAS with:
 
-```text
-green -> 127.0.0.1:18081
+```bash
+ssh superkkj@192.168.31.2 'cat /volume1/shortbridge/active_slot; cat /volume1/shortbridge/proxy/active_upstream.conf'
 ```
 
 ## Important Constraint
@@ -92,7 +99,7 @@ Fully independent NAS deployment still needs:
 
 - MariaDB `shortbridge` database/user setup on NAS, or a confirmed DB password.
 - CloudAMQP/RabbitMQ URL, or another queue strategy that does not require Docker on DS118.
-- OAuth callback URLs changed to the final public `BASE_URL`.
+- OAuth provider consoles updated to the final public `BASE_URL`: `https://shortbridge.duckdns.org`.
 
 ## Manual Deploy From This Mac
 

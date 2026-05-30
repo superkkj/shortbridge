@@ -102,30 +102,47 @@ GET /login -> 200 OK
 - During startup, old slot remains active until the new slot passes `/actuator/health`.
 - NAS-only runtime secrets are in `/volume1/shortbridge/app.env`; do not commit them.
 
-## Current Domain Direction
+## Current Domain
 
-For a free public hostname, use this order:
-
-1. Existing Synology DDNS if available, for example `dunblack.synology.me`.
-2. DuckDNS if a simple free DDNS subdomain is enough.
-3. FreeDNS afraid.org if DuckDNS naming is not available.
-4. No-IP only if a single free hostname is enough and account maintenance is acceptable.
-5. EU.org only if waiting/manual approval is acceptable.
-
-For real OAuth callbacks and user-facing access, HTTPS is still required. Free DDNS gives a hostname, but TLS/reverse proxy setup is a separate step.
-
-Reference links checked on 2026-05-31:
-
-- Synology DDNS: `https://kb.synology.com/en-global/DSM/help/DSM/AdminCenter/connection_ddns`
-- DuckDNS: `https://www.duckdns.org/`
-- FreeDNS: `https://freedns.afraid.org/`
-- No-IP Free Dynamic DNS: `https://www.noip.com/free`
-- EU.org: `https://nic.eu.org/`
-
-Recommendation for ShortBridge:
+ShortBridge now uses DuckDNS:
 
 ```text
-Use Synology DDNS first if `dunblack.synology.me` is controllable.
-Then configure HTTPS on Synology reverse proxy or another front proxy.
-Only switch to DuckDNS/FreeDNS if the Synology hostname is not usable for OAuth callbacks.
+https://shortbridge.duckdns.org
+```
+
+DuckDNS and HTTPS setup details are documented in:
+
+```text
+docs/deployment/DUCKDNS_DOMAIN_SETUP.md
+```
+
+The public path is:
+
+```text
+shortbridge.duckdns.org:443
+-> Synology nginx
+-> 127.0.0.1:8080
+-> ShortBridge nginx blue-green proxy
+-> active Java slot
+```
+
+## Public HTTPS Header Fix
+
+When Synology nginx was added in front of ShortBridge nginx, `/` initially redirected to:
+
+```text
+http://shortbridge.duckdns.org:8080/login
+```
+
+Root cause:
+
+```text
+Synology nginx correctly forwarded https/443, but the ShortBridge nginx layer overwrote forwarded proto/port with http/8080.
+```
+
+Fix:
+
+```text
+scripts/nas/start-blue-green.sh now preserves incoming X-Forwarded-Host, X-Forwarded-Proto, and X-Forwarded-Port when present.
+Direct LAN access still falls back to the 8080 values.
 ```

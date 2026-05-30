@@ -78,10 +78,12 @@ superkkj@192.168.31.2:/volume1/shortbridge/app.jar.next
 Public app URL:
 
 ```text
+https://shortbridge.duckdns.org
 http://192.168.31.2:8080
 ```
 
-Port `8080` is handled by NAS nginx. The Java app runs behind it on one active slot:
+Public `443` is handled by Synology nginx and proxied to ShortBridge nginx on `127.0.0.1:8080`.
+Port `8080` remains available on the LAN. The Java app runs behind it on one active slot:
 
 - blue: `127.0.0.1:18080`
 - green: `127.0.0.1:18081`
@@ -98,15 +100,23 @@ The upstream nginx target is stored at:
 /volume1/shortbridge/proxy/active_upstream.conf
 ```
 
-nginx must preserve the public port in forwarded headers. Otherwise Spring redirects `/` to `http://192.168.31.2/login` instead of `http://192.168.31.2:8080/login`.
+nginx must preserve the public forwarded headers. Otherwise Spring redirects either:
+
+```text
+http://192.168.31.2/login
+http://shortbridge.duckdns.org:8080/login
+```
 
 Required headers:
 
 ```nginx
-proxy_set_header Host $http_host;
-proxy_set_header X-Forwarded-Host $http_host;
-proxy_set_header X-Forwarded-Port $server_port;
+proxy_set_header Host $shortbridge_forwarded_host;
+proxy_set_header X-Forwarded-Host $shortbridge_forwarded_host;
+proxy_set_header X-Forwarded-Proto $shortbridge_forwarded_proto;
+proxy_set_header X-Forwarded-Port $shortbridge_forwarded_port;
 ```
+
+`scripts/nas/start-blue-green.sh` maps incoming `X-Forwarded-*` headers from Synology nginx when present and falls back to direct `8080` values for LAN access.
 
 ## Blue-Green Behavior
 
