@@ -37,7 +37,7 @@ spring:
               - openid
               - email
               - profile
-            redirect-uri: "${BASE_URL:https://shortbridge.onrender.com}/login/oauth2/code/{registrationId}"
+            redirect-uri: "${BASE_URL:https://shortbridge.duckdns.org}/login/oauth2/code/{registrationId}"
 
 server:
   port: ${PORT:8080}
@@ -56,18 +56,18 @@ management:
 
 shortbridge:
   connect:
-    base-url: ${BASE_URL:https://shortbridge.onrender.com}
+    base-url: ${BASE_URL:https://shortbridge.duckdns.org}
     youtube:
       client-id: ${YOUTUBE_CLIENT_ID}
       client-secret: ${YOUTUBE_CLIENT_SECRET}
     tiktok:
       client-id: ${TIKTOK_CLIENT_KEY}
       client-secret: ${TIKTOK_CLIENT_SECRET}
-      redirect-uri: ${TIKTOK_REDIRECT_URI:${BASE_URL:https://shortbridge.onrender.com}/connect/tiktok/callback}
+      redirect-uri: ${TIKTOK_REDIRECT_URI:${BASE_URL:https://shortbridge.duckdns.org}/connect/tiktok/callback}
     instagram:
       client-id: ${INSTAGRAM_CLIENT_ID:not-set-yet}
       client-secret: ${INSTAGRAM_CLIENT_SECRET:not-set-yet}
-      redirect-uri: ${INSTAGRAM_REDIRECT_URI:${BASE_URL:https://shortbridge.onrender.com}/connect/instagram/callback}
+      redirect-uri: ${INSTAGRAM_REDIRECT_URI:${BASE_URL:https://shortbridge.duckdns.org}/connect/instagram/callback}
       api-base-url: ${INSTAGRAM_API_BASE_URL:https://graph.facebook.com/v23.0}
       scopes:
         - pages_show_list
@@ -78,7 +78,7 @@ shortbridge:
     type: ${STORAGE_TYPE:local}
     local:
       base-dir: ${STORAGE_LOCAL_BASE:/tmp/shortbridge-storage}
-      public-base-url: ${STORAGE_LOCAL_PUBLIC_URL:${BASE_URL:https://shortbridge.onrender.com}/files}
+      public-base-url: ${STORAGE_LOCAL_PUBLIC_URL:${BASE_URL:https://shortbridge.duckdns.org}/files}
     s3:
       endpoint: ${S3_ENDPOINT:}
       region: ${S3_REGION:auto}

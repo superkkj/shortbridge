@@ -35,7 +35,7 @@ spring:
               - openid
               - email
               - profile
-            redirect-uri: "${BASE_URL:http://dunblack.synology.me:8080}/login/oauth2/code/{registrationId}"
+            redirect-uri: "${BASE_URL:https://shortbridge.duckdns.org}/login/oauth2/code/{registrationId}"
 
 server:
   port: ${PORT:8080}
@@ -54,18 +54,18 @@ management:
 
 shortbridge:
   connect:
-    base-url: ${BASE_URL:http://dunblack.synology.me:8080}
+    base-url: ${BASE_URL:https://shortbridge.duckdns.org}
     youtube:
       client-id: ${YOUTUBE_CLIENT_ID:not-set}
       client-secret: ${YOUTUBE_CLIENT_SECRET:not-set}
     tiktok:
       client-id: ${TIKTOK_CLIENT_KEY:not-set}
       client-secret: ${TIKTOK_CLIENT_SECRET:not-set}
-      redirect-uri: ${TIKTOK_REDIRECT_URI:${BASE_URL:http://dunblack.synology.me:8080}/connect/tiktok/callback}
+      redirect-uri: ${TIKTOK_REDIRECT_URI:${BASE_URL:https://shortbridge.duckdns.org}/connect/tiktok/callback}
     instagram:
       client-id: ${INSTAGRAM_CLIENT_ID:not-set}
       client-secret: ${INSTAGRAM_CLIENT_SECRET:not-set}
-      redirect-uri: ${INSTAGRAM_REDIRECT_URI:${BASE_URL:http://dunblack.synology.me:8080}/connect/instagram/callback}
+      redirect-uri: ${INSTAGRAM_REDIRECT_URI:${BASE_URL:https://shortbridge.duckdns.org}/connect/instagram/callback}
       api-base-url: ${INSTAGRAM_API_BASE_URL:https://graph.facebook.com/v23.0}
       scopes:
         - pages_show_list
@@ -76,7 +76,7 @@ shortbridge:
     type: local
     local:
       base-dir: ${STORAGE_LOCAL_BASE:/volume1/shortbridge/storage}
-      public-base-url: ${STORAGE_LOCAL_PUBLIC_URL:${BASE_URL:http://dunblack.synology.me:8080}/files}
+      public-base-url: ${STORAGE_LOCAL_PUBLIC_URL:${BASE_URL:https://shortbridge.duckdns.org}/files}
   security:
     token-cipher:
       keys:

@@ -1,6 +1,6 @@
 # ShortBridge Docker Blue-Green CI/CD
 
-> Last updated: 2026-05-30
+> Last updated: 2026-05-31
 
 ## Current Status
 
@@ -21,7 +21,7 @@ DS118 does not support Docker/Container Manager, so Docker blue-green cannot run
 - Local LAN is `192.168.31.0/24`.
 - Synology MAC OUI was found at `192.168.31.2`.
 - Open ports on `192.168.31.2`: `22`, `80`, `443`, `5000`, `5001`.
-- `dunblack.synology.me` resolves to `125.243.99.46`; ICMP ping is blocked or filtered.
+- Public DuckDNS domain is `shortbridge.duckdns.org`.
 - SSH key login for `superkkj@192.168.31.2` is configured from this Mac.
 - DS118 does not have Docker/Container Manager available, so Docker blue-green cannot run directly on this NAS model.
 - Active live runtime is JAR blue-green:
@@ -29,8 +29,10 @@ DS118 does not support Docker/Container Manager, so Docker blue-green cannot run
   - App: `/volume1/shortbridge/app.jar`
   - Start: `/volume1/shortbridge/start.sh`
   - Stop: `/volume1/shortbridge/stop.sh`
-  - URL: `http://192.168.31.2:8080`
-  - nginx public port: `8080`
+  - Public URL: `https://shortbridge.duckdns.org`
+  - LAN URL: `http://192.168.31.2:8080`
+  - Synology nginx public port: `443`
+  - ShortBridge nginx LAN port: `8080`
   - Java slots: `18080` and `18081`
   - DB/RabbitMQ currently point back to Mac Docker at `192.168.31.18`.
 
@@ -81,7 +83,7 @@ Minimum required secrets:
 
 Set these in GitHub repository secrets:
 
-- `NAS_SSH_HOST`: use `192.168.31.2` for a self-hosted runner on the home LAN, or `dunblack.synology.me` if SSH is port-forwarded.
+- `NAS_SSH_HOST`: use `192.168.31.2` for a self-hosted runner on the home LAN, or `shortbridge.duckdns.org` if SSH is intentionally port-forwarded.
 - `NAS_SSH_USER`
 - `NAS_SSH_KEY`
 - `NAS_SSH_PORT`: optional, default `22`
@@ -114,9 +116,9 @@ REGISTRY=ghcr.io IMAGE_NAME=superkkj/shortbridge TAG=latest ./scripts/deploy-nas
 
 Register these URLs in external developer consoles when NAS is the public runtime:
 
-- Google: `http://dunblack.synology.me:8080/login/oauth2/code/google`
-- YouTube uses the same Google OAuth client redirect if shared.
-- TikTok: `http://dunblack.synology.me:8080/connect/tiktok/callback`
-- Instagram: `http://dunblack.synology.me:8080/connect/instagram/callback`
+- Google: `https://shortbridge.duckdns.org/login/oauth2/code/google`
+- YouTube: `https://shortbridge.duckdns.org/connect/youtube/callback`
+- TikTok: `https://shortbridge.duckdns.org/connect/tiktok/callback`
+- Instagram: `https://shortbridge.duckdns.org/connect/instagram/callback`
 
-If HTTPS is required by a platform, put Cloudflare Tunnel, Synology reverse proxy with TLS, or another HTTPS proxy in front and change `BASE_URL`.
+`BASE_URL` should remain `https://shortbridge.duckdns.org` for the current NAS runtime.

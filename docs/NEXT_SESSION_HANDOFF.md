@@ -10,8 +10,9 @@
 4. `docs/deployment/DUCKDNS_DOMAIN_SETUP.md`
 5. `docs/deployment/NAS_AUTODEPLOY_VERIFICATION_2026-05-31.md`
 6. `docs/deployment/NAS_BLUE_GREEN_CICD.md`
-7. `docs/integrations/META_TEST_ACCOUNT_WORKLOG.md` if present locally
-8. `docs/integrations/INSTAGRAM_REELS_SETUP.md` if present locally
+7. `docs/integrations/OAUTH_CALLBACKS_DUCKDNS_2026-05-31.md`
+8. `docs/integrations/META_TEST_ACCOUNT_WORKLOG.md` if present locally
+9. `docs/integrations/INSTAGRAM_REELS_SETUP.md` if present locally
 
 ## Instagram / Meta Current State
 
@@ -20,10 +21,19 @@
 - Facebook login for Business reached the Instagram confirmation step.
 - Safari was last stopped at Instagram password confirmation for `blood_nail2026`; password must be entered manually by the user.
 - Meta app ID in use: `780362769998612`.
+- NAS runtime has the Meta app ID/secret and Instagram callback set for `https://shortbridge.duckdns.org/connect/instagram/callback`.
 - Current local tunnel during the 2026-05-30 session was `https://lbs-decisions-simultaneously-jenny.trycloudflare.com`.
 - Registered callback during that session: `https://lbs-decisions-simultaneously-jenny.trycloudflare.com/connect/instagram/callback`.
 - YouTube is connected.
 - TikTok can publish only under current sandbox/privacy constraints; user accepts self-only behavior for now.
+- 2026-05-31 DuckDNS callback migration:
+  - App runtime redirects are updated for Google login, YouTube, TikTok, and Instagram.
+  - Google Cloud OAuth client `ShortBridge Local v2` was updated with `https://shortbridge.duckdns.org` origin plus Google login and YouTube callback redirect URIs.
+  - Google login from the DuckDNS URL was verified through to the ShortBridge dashboard.
+  - YouTube connect from the DuckDNS URL was verified through Google consent and returned to `social-accounts?connected=youtube`.
+  - Meta dashboard remains blocked at Facebook reCAPTCHA/two-step verification in Playwright.
+  - TikTok Developers remains blocked at developer account login in Playwright.
+  - Details are in `docs/integrations/OAUTH_CALLBACKS_DUCKDNS_2026-05-31.md`.
 
 ## Instagram Code State
 
@@ -36,11 +46,11 @@
 
 ## Instagram Next Step
 
-Start the app with the same Instagram env vars, open Safari, then run:
+Use the NAS public URL and run:
 
 ```text
-http://localhost:8080/dev/login
-http://localhost:8080/connect/instagram
+https://shortbridge.duckdns.org/social-accounts
+https://shortbridge.duckdns.org/connect/instagram
 ```
 
 Proceed through Facebook Business Login. The user must manually enter Instagram password/2FA/CAPTCHA if asked.
