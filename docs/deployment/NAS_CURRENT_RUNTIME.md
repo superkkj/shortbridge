@@ -1,6 +1,6 @@
 # ShortBridge NAS Current Runtime
 
-> Last updated: 2026-05-30
+> Last updated: 2026-05-31
 
 ## Answer First
 
@@ -14,6 +14,18 @@ The active implementation is documented in `docs/deployment/NAS_MASTER_PUSH_AUTO
 
 ```text
 http://192.168.31.2:8080
+```
+
+Browser check:
+
+```text
+http://192.168.31.2:8080/login
+```
+
+Expected page title:
+
+```text
+로그인 · ShortBridge
 ```
 
 Health check:
@@ -44,6 +56,18 @@ Expected:
 - Nginx logs: `/volume1/shortbridge/logs/nginx-access.log`, `/volume1/shortbridge/logs/nginx-error.log`
 - Start script: `/volume1/shortbridge/start.sh`
 - Stop script: `/volume1/shortbridge/stop.sh`
+
+Latest verified deployment:
+
+```text
+2771bb7b3b37b29c3c92886ea74871cd841c665f
+```
+
+Latest verified active slot:
+
+```text
+green -> 127.0.0.1:18081
+```
 
 ## Important Constraint
 

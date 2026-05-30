@@ -1,15 +1,16 @@
 # ShortBridge Next Session Handoff
 
-> Last updated: 2026-05-30
+> Last updated: 2026-05-31
 
 ## Read First
 
 1. `docs/NEXT_SESSION_HANDOFF.md`
 2. `docs/deployment/NAS_CURRENT_RUNTIME.md`
 3. `docs/deployment/NAS_MASTER_PUSH_AUTODEPLOY.md`
-4. `docs/deployment/NAS_BLUE_GREEN_CICD.md`
-5. `docs/integrations/META_TEST_ACCOUNT_WORKLOG.md` if present locally
-6. `docs/integrations/INSTAGRAM_REELS_SETUP.md` if present locally
+4. `docs/deployment/NAS_AUTODEPLOY_VERIFICATION_2026-05-31.md`
+5. `docs/deployment/NAS_BLUE_GREEN_CICD.md`
+6. `docs/integrations/META_TEST_ACCOUNT_WORKLOG.md` if present locally
+7. `docs/integrations/INSTAGRAM_REELS_SETUP.md` if present locally
 
 ## Instagram / Meta Current State
 
@@ -85,3 +86,7 @@ That log decides whether the problem is page access, missing IG linkage, or a co
   - log: `~/Library/Logs/shortbridge-nas-deploy.log`
 - The watcher checks `origin/master` every 60 seconds, builds in an isolated clone, uploads `app.jar`, and runs the NAS blue-green `start.sh`.
 - GitHub Actions JAR deploy workflow is present at `.github/workflows/deploy-nas-jar.yml`, but the active path is the local LaunchAgent because GitHub-hosted runners cannot reach the private LAN NAS.
+- Auto deploy was verified with commit `2771bb7b3b37b29c3c92886ea74871cd841c665f`.
+- Browser `/login` was verified with Playwright/Chrome. Page title was `로그인 · ShortBridge`.
+- nginx redirect bug was fixed by preserving `$http_host` and `X-Forwarded-Port`; without this, `/` redirected to `http://192.168.31.2/login` and missed port `8080`.
+- Free domain direction: prefer existing Synology DDNS first, then DuckDNS/FreeDNS. See `docs/deployment/NAS_AUTODEPLOY_VERIFICATION_2026-05-31.md`.

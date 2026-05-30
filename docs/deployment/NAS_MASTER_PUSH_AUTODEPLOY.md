@@ -1,6 +1,6 @@
 # ShortBridge NAS Master Push Auto Deploy
 
-> Last updated: 2026-05-30
+> Last updated: 2026-05-31
 
 ## Status
 
@@ -9,6 +9,8 @@ Active.
 When this Mac is powered on, logged in, and on the home network, a push to GitHub `origin/master` is picked up within about 60 seconds and deployed to the NAS.
 
 This is not using GitHub-hosted Actions for the active path because the NAS is only reachable on the private LAN as `192.168.31.2`. GitHub-hosted runners cannot SSH into that address.
+
+Latest verification details are in `docs/deployment/NAS_AUTODEPLOY_VERIFICATION_2026-05-31.md`.
 
 ## Trigger
 
@@ -94,6 +96,16 @@ The upstream nginx target is stored at:
 
 ```text
 /volume1/shortbridge/proxy/active_upstream.conf
+```
+
+nginx must preserve the public port in forwarded headers. Otherwise Spring redirects `/` to `http://192.168.31.2/login` instead of `http://192.168.31.2:8080/login`.
+
+Required headers:
+
+```nginx
+proxy_set_header Host $http_host;
+proxy_set_header X-Forwarded-Host $http_host;
+proxy_set_header X-Forwarded-Port $server_port;
 ```
 
 ## Blue-Green Behavior
